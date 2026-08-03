@@ -601,14 +601,14 @@ tr:hover td{background:var(--cream);}
         <p>हालसालै जोडिनुभएका ग्राहक, मेरो टिमका Direct/Downline अभिकर्ताहरू, र मेरो हालसम्मको यात्रा।</p>
       </div>
       <div class="network-tabs">
-        <button class="network-tab active" onclick="setNetworkTab('customers', this)"><i class="fa-solid fa-users"></i> बिमित (Policyholders)</button>
+        <button class="network-tab active" onclick="setNetworkTab('achievements', this)"><i class="fa-solid fa-trophy"></i> Professional Achievement</button>
+        <button class="network-tab" onclick="setNetworkTab('customers', this)"><i class="fa-solid fa-users"></i> बिमित (Policyholders)</button>
         <button class="network-tab" onclick="setNetworkTab('agents', this)"><i class="fa-solid fa-people-group"></i> Downline Agents</button>
-        <button class="network-tab" onclick="setNetworkTab('achievements', this)"><i class="fa-solid fa-trophy"></i> Professional Achievement</button>
       </div>
       <div class="network-slider-wrap">
-        <div class="network-slider" id="networkSliderCustomers"></div>
+        <div class="network-slider" id="networkSliderAchievements"></div>
+        <div class="network-slider hidden" id="networkSliderCustomers"></div>
         <div class="network-slider hidden" id="networkSliderAgents"></div>
-        <div class="network-slider hidden" id="networkSliderAchievements"></div>
       </div>
     </div>
   </section>
@@ -1552,8 +1552,6 @@ function hideLoading(){
   overlay.classList.remove("visible");
   setTimeout(()=>overlay.classList.remove("show"), 200);
 }
-function showSyncBadge(){ document.getElementById("syncBadge").classList.add("show"); }
-function hideSyncBadge(){ document.getElementById("syncBadge").classList.remove("show"); }
 
 /* ---------- Customer login ----------
    प्रमाणीकरण मोडेल: Policy Number + जन्ममिति (वि.सं. वा AD, जुनसुकै) = password.
@@ -2271,7 +2269,6 @@ async function initializeData(){
   // कन्टेन्ट स्थिर (static, माथिकै JS array/const मा) राखिएको छ — त्यसैले हरेक visitor को पेज लोडमा
   // अनावश्यक database query जाँदैन। यी परिवर्तन गर्न फाइलभित्रैको सम्बन्धित array सिधै सम्पादन गर्नुहोस्।
   if(!CONFIG.APPS_SCRIPT_URL) return; // backend नजोडिएसम्म demo data नै देखाइराख्ने, केही थप नगर्ने
-  showSyncBadge();
   try{
     const [remotePolicyholders, remoteAgents, remoteBlogs, remoteStats] = await Promise.all([
       apiCall("getRecentPolicyholders"),
@@ -2304,8 +2301,8 @@ async function initializeData(){
     renderNetworkSliders();
     flashUpdatedStats();
     if(session.role === "admin") renderAdminAll();
-  } finally {
-    hideSyncBadge();
+  } catch(err){
+    console.error("initializeData failed:", err);
   }
 }
 
