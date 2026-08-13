@@ -1062,11 +1062,29 @@ tr:hover td{background:var(--cream);}
       <div class="stat-grid">
         <div class="stat-card"><span class="lbl">कुल सक्रिय ग्राहक</span><b id="ovTotalCustomers">0</b></div>
         <div class="stat-card crimson"><span class="lbl">यो महिना नविकरण ड्यु</span><b id="ovDueThisMonth">0</b></div>
-        <div class="stat-card"><span class="lbl">यो महिना कमिसन</span><b id="ovCommission">रु. 0</b></div>
+        <div class="stat-card"><span class="lbl">यो महिना कमिसन (खुद, TDS पछि)</span><b id="ovCommission">रु. 0</b><span class="lbl" id="ovCommissionSub" style="display:block; margin-top:4px; font-size:.72rem;">कुल रु. 0 − TDS (२०%) रु. 0</span></div>
         <div class="stat-card">
           <span class="lbl">क्लब टार्गेट प्रगति</span><b id="ovClubPct">0%</b>
           <div class="bar"><i id="ovClubBar" style="width:0%"></i></div>
         </div>
+      </div>
+      <div id="ovCommissionWarning" class="hidden" style="background:var(--crimson-tint); color:var(--crimson); padding:12px 16px; border-radius:10px; font-size:.86rem; margin-bottom:18px; display:flex; align-items:center; gap:8px;"><i class="fa-solid fa-triangle-exclamation"></i> <span></span></div>
+      <div class="panel">
+        <div class="panel-head"><h3><i class="fa-solid fa-calculator"></i> यो महिना कमिसन — योजना प्रकार अनुसार समूहगत विवरण</h3></div>
+        <div class="table-scroll"><table>
+          <thead><tr><th>बीमा योजना प्रकार</th><th>ग्राहक संख्या</th><th>कुल प्रिमियम</th><th>कमिसन (कुल)</th><th>TDS (२०%)</th><th>कमिसन (खुद)</th></tr></thead>
+          <tbody id="ovCommissionBreakdown"></tbody>
+        </table></div>
+      </div>
+      <div class="panel">
+        <div class="panel-head"><h3><i class="fa-solid fa-chart-column"></i> कमिसन ट्रेन्ड — चालु आर्थिक वर्ष (१२ महिना)</h3></div>
+        <p style="font-size:.78rem; color:var(--ink-soft); margin:-6px 0 12px;">नयाँ (First Premium) र नविकरण (Renewal) कमिसन छुट्याएर देखाइएको छ। महिना समूहीकरण Gregorian मितिमा आधारित (नेपाली महिनासँग करिब मिलाइएको) हो।</p>
+        <div style="position:relative; height:280px;"><canvas id="commissionChart"></canvas></div>
+      </div>
+      <div class="panel">
+        <div class="panel-head"><h3><i class="fa-solid fa-chart-column"></i> प्रिमियम संकलन ट्रेन्ड — चालु आर्थिक वर्ष (१२ महिना)</h3></div>
+        <p style="font-size:.78rem; color:var(--ink-soft); margin:-6px 0 12px;">महिनावार वास्तविक संकलित प्रिमियम (नयाँ र नविकरण छुट्याएर) — "भुक्तान भयो" लग गरिएका प्रविष्टिहरूबाट, कुनै अनुमान/estimate होइन।</p>
+        <div style="position:relative; height:280px;"><canvas id="premiumChart"></canvas></div>
       </div>
       <div class="grid-2">
         <div class="panel">
@@ -1076,7 +1094,7 @@ tr:hover td{background:var(--cream);}
           <p style="font-size:.8rem; color:var(--ink-soft); margin-top:8px;" id="ovMonthlyNote">लक्ष्यको तुलनामा</p>
         </div>
         <div class="panel">
-          <div class="panel-head"><h3>प्रिमियम संकलन (वार्षिक)</h3></div>
+          <div class="panel-head"><h3>प्रिमियम संकलन (वार्षिक — कुल पोर्टफोलियो मूल्य)</h3></div>
           <div id="ovYearlyPremium" class="mono" style="font-size:1.8rem; color:var(--pine);">रु. 0</div>
           <div class="bar" style="margin-top:10px;"><i id="ovYearlyBar" style="width:0%; background:var(--gold);"></i></div>
           <p style="font-size:.8rem; color:var(--ink-soft); margin-top:8px;" id="ovYearlyNote">लक्ष्यको तुलनामा</p>
@@ -1225,6 +1243,28 @@ tr:hover td{background:var(--cream);}
     </div>
     <div class="field" style="margin-bottom:12px;"><label>राइडर (comma ले छुट्याउनुहोस्)</label><input id="cRiders" placeholder="ADB, PTD, Critical Illness"></div>
 
+    <p class="eyebrow" style="margin:18px 0 10px;">कमिसन हिसाबका लागि (अनिवार्य)</p>
+    <div class="form-row2" style="margin-bottom:12px;">
+      <div class="field">
+        <label>बीमा योजना प्रकार</label>
+        <select id="cSchemeCategory">
+          <option value="">— छान्नुहोस् —</option>
+          <option value="सावधिक जीवन बीमा">सावधिक जीवन बीमा</option>
+          <option value="आजीवन जीवन बीमा">आजीवन जीवन बीमा</option>
+          <option value="म्यादी जीवन बीमा (समतल)">म्यादी जीवन बीमा (समतल)</option>
+          <option value="म्यादी जीवन बीमा (ह्रासतल)">म्यादी जीवन बीमा (ह्रासतल)</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>मुनाफामा सहभागिता</label>
+        <select id="cParticipating">
+          <option value="">— छान्नुहोस् —</option>
+          <option value="participating">शरीक हुने</option>
+          <option value="non-participating">शरीक नहुने</option>
+        </select>
+      </div>
+    </div>
+
     <p class="eyebrow" style="margin:18px 0 10px;">थप विवरण (Sheet अनुसार)</p>
     <div class="field" style="margin-bottom:12px;"><label>ठेगाना</label><input id="cAddress" placeholder="जस्तै काठमाडौं, नेपाल"></div>
     <div class="field" style="margin-bottom:12px;"><label>इमेल</label><input type="email" id="cEmail" placeholder="ग्राहकको इमेल (ऐच्छिक)"></div>
@@ -1270,6 +1310,7 @@ tr:hover td{background:var(--cream);}
 <!-- Firebase Web SDK (compat build — यसले परिवर्तन नगरी बाँकी सबै <script> लाई
      पुरानै <script> (module होइन) शैलीमा राख्न दिन्छ)। यी दुई मात्र चाहिन्छ:
      "app" (जोड्न) र "database" (Realtime Database पढ्न/सुन्न)। -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.4/chart.umd.min.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-database-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-analytics-compat.js"></script>
@@ -1383,11 +1424,244 @@ let customers = [];
 let prospects = [];
 let targets = { monthly: 150000, yearly: 1800000, club: 2500000 };
 
-// यो वर्षभित्रको जम्मा कमाएको कमिसन दर मान: १०%
-const COMMISSION_RATE = 0.10;
+/* ============================================================
+   COMMISSION ENGINE — कम्पनीको आधिकारिक दर तालिका अनुसार (फोटोबाट)
+   ============================================================
+   दरहरू वार्षिक प्रिमियमको % हुन्, र योजना प्रकार + बीमा अवधि (वा समतल/ह्रासतल)
+   + बीमा वर्ष (पहिलो/दोस्रो/तेस्रो-दशौं) + मुनाफामा सहभागिता अनुसार फरक हुन्छन्।
+   TDS सबैमा २०% कटौती हुन्छ (कम्पनीले नै काटेर बुझाउँछ)।
+   ============================================================ */
+const TDS_RATE = 0.20;
+
+// सावधिक जीवन बीमा — अवधि (वर्ष) दायरा अनुसार।
+const SAVADHIK_RATES = [
+  { min:20, max:Infinity, label:"२० वर्ष वा बढी", y1:{p:25,np:25}, y2:{p:25,np:20}, y3to10:5 },
+  { min:15, max:19,       label:"१५-१९ वर्ष",      y1:{p:25,np:20}, y2:{p:15,np:15}, y3to10:5 },
+  { min:10, max:14,       label:"१०-१४ वर्ष",      y1:{p:15,np:15}, y2:{p:15,np:15}, y3to10:5 },
+  { min:8,  max:9,        label:"८-९ वर्ष",        y1:{p:10,np:10}, y2:{p:10,np:10}, y3to10:5 },
+  { min:5,  max:7,        label:"५-७ वर्ष",        y1:{p:10,np:10}, y2:{p:5, np:5},  y3to10:5 },
+];
+
+// आजीवन जीवन बीमा — अवधि (वर्ष) दायरा अनुसार।
+const AJEEVAN_RATES = [
+  { min:25, max:Infinity, label:"२५ वर्ष वा बढी", y1:{p:25,np:25}, y2:{p:25,np:20}, y3to10:5 },
+  { min:20, max:24,       label:"२०-२४ वर्ष",      y1:{p:25,np:20}, y2:{p:15,np:15}, y3to10:5 },
+  { min:15, max:19,       label:"१५-१९ वर्ष",      y1:{p:15,np:15}, y2:{p:15,np:15}, y3to10:5 },
+  { min:10, max:14,       label:"१०-१४ वर्ष",      y1:{p:10,np:10}, y2:{p:10,np:10}, y3to10:5 },
+  { min:5,  max:9,        label:"५-९ वर्ष",        y1:{p:10,np:10}, y2:{p:5, np:5},  y3to10:5 },
+];
+
+// म्यादी जीवन बीमा — अवधि-वर्षले होइन, "समतल/ह्रासतल" प्रकारले छुट्याइन्छ। "null" ले
+// तालिकामा भएको "-" (लागू नहुने) जनाउँछ।
+const MYADI_RATES = {
+  "समतल":   { y1:{p:null, np:10}, y2:{p:5, np:5},   y3to10:5 },
+  "ह्रासतल": { y1:{p:null, np:5},  y2:{p:null,np:null}, y3to10:null },
+};
+
+// ग्राहकको हालको "बीमा वर्ष" — तिरिसकेको प्रिमियम संख्या + १ ले अर्को/हालको किस्ता
+// कुन वर्षको हो भन्ने देखाउँछ (जस्तै २ वटा तिरिसकेको भए, अर्को किस्ता तेस्रो वर्षको हो)।
+function policyYearOf_(c){
+  return (Number(c.paidPremiumCount)||0) + 1;
+}
+function commissionYearLabel_(year){
+  if(year===1) return "पहिलो वर्ष";
+  if(year===2) return "दोस्रो वर्ष";
+  if(year>=3 && year<=10) return "तेस्रो-दशौं वर्ष";
+  return "दशौं वर्षपछि";
+}
+
+// ग्राहकको लागि लागू हुने कमिसन (gross/TDS/net) हिसाब गर्छ। "बीमा योजना प्रकार" वा
+// "मुनाफामा सहभागिता" भरिएको छैन भने matched:false फर्काउँछ — यस्तो ग्राहकलाई
+// टोटलमा नजोड्नुहोस् र बरु agent लाई विवरण पूरा गर्न भन्नुहोस्, किनभने अनुमान गरेर
+// देखाइएको गलत रकमले एजेन्टलाई गलत आम्दानी अपेक्षा दिन सक्छ।
+function computeCommission_(c){
+  const category = c.schemeCategory || "";
+  const premium = Number(c.premium)||0;
+  const year = policyYearOf_(c);
+  const participatingKey = c.participating === "participating" ? "p" : "np";
+
+  let rateRow = null, bucketLabel = "";
+  if(category === "सावधिक जीवन बीमा" || category === "आजीवन जीवन बीमा"){
+    const term = Number(c.term)||0;
+    const table = category === "सावधिक जीवन बीमा" ? SAVADHIK_RATES : AJEEVAN_RATES;
+    const bucket = table.find(b => term >= b.min && term <= b.max);
+    if(bucket){ rateRow = bucket; bucketLabel = bucket.label; }
+  } else if(category.indexOf("म्यादी जीवन बीमा") === 0){
+    const subtype = category.indexOf("समतल") !== -1 ? "समतल" : "ह्रासतल";
+    rateRow = MYADI_RATES[subtype];
+    bucketLabel = subtype;
+  }
+
+  if(!rateRow || !premium || !c.participating){
+    return { matched:false, category, premium, gross:0, tds:0, net:0 };
+  }
+
+  let rate;
+  if(year === 1) rate = rateRow.y1[participatingKey];
+  else if(year === 2) rate = rateRow.y2[participatingKey];
+  else if(year >= 3 && year <= 10) rate = rateRow.y3to10;
+  else rate = 0; // तालिकाले दशौं वर्षपछिको दर तोकेको छैन
+
+  if(rate == null){
+    // तालिकामा यो संयोजनका लागि "-" छ (जस्तै ह्रासतलको दोस्रो वर्षपछि) — कमिसन छैन।
+    return { matched:true, category, bucketLabel, year, rate:0, premium, gross:0, tds:0, net:0 };
+  }
+
+  const gross = Math.round(premium * rate / 100);
+  const tds = Math.round(gross * TDS_RATE);
+  const net = gross - tds;
+  return { matched:true, category, bucketLabel, year, rate, premium, gross, tds, net };
+}
+
+/* ============================================================
+   COMMISSION LOG — वास्तविक भुक्तान भएको घटना (event) आधारमा
+   ============================================================
+   पहिले "यो महिना कमिसन" लाई "नविकरण ड्यु" (आउँदो ३० दिनभित्र) सूचीबाट अनुमान
+   गरिन्थ्यो — तर ग्राहकले नविकरण गरिसकेपछि agent ले renewDate अर्को वर्षलाई सारेको
+   बित्तिकै त्यो ग्राहक "ड्यु" सूचीबाट हराउँथ्यो, र त्यसैले साँच्चै यो महिना तिरेको
+   भए पनि कमिसन गणनामा कहिल्यै देखिँदैनथ्यो। यही थियो रिपोर्ट भएको बग।
+
+   अब हरेक पटक "भुक्तान भयो" थिचिँदा एउटा स्थायी लग प्रविष्टि (/commissionLog मा)
+   बन्छ, र "यो महिना कमिसन" त्यही लगबाट (renewDate बाट होइन) गणना हुन्छ — त्यसैले
+   ढिलो/चाँडो अपडेट भए पनि सही महिनामै देखिन्छ, र १२-महिने ग्राफको लागि इतिहास पनि
+   बन्दै जान्छ।
+   ============================================================ */
+function todayISO_(){
+  return today.getFullYear() + "-" + String(today.getMonth()+1).padStart(2,"0") + "-" + String(today.getDate()).padStart(2,"0");
+}
+function addYearsToDateStr_(dateStr, n){
+  const d = new Date(dateStr);
+  if(isNaN(d.getTime())) return dateStr;
+  d.setFullYear(d.getFullYear()+n);
+  return d.getFullYear() + "-" + String(d.getMonth()+1).padStart(2,"0") + "-" + String(d.getDate()).padStart(2,"0");
+}
+function isDateInMonth_(dateStr, year, month){
+  if(!dateStr) return false;
+  const d = new Date(dateStr);
+  if(isNaN(d.getTime())) return false;
+  return d.getFullYear()===year && d.getMonth()===month;
+}
+
+// एजेन्टले ग्राहकको प्रिमियम भुक्तान संकलन गरेपछि यो चलाउनुहोस्। यसले: (१) आजको
+// मितिमा एउटा कमिसन-लग प्रविष्टि बनाउँछ (First Premium हो कि Renewal हो भन्ने
+// स्वतः थाहा पाएर), (२) ग्राहकको तिरिसकेको प्रिमियम संख्या +१ गर्छ, (३) नविकरण
+// मिति १ वर्ष पर सार्छ, (४) अन्तिम भुक्तान मिति रेकर्ड गर्छ।
+async function markPremiumPaid(id){
+  const c = customers.find(x=>x.id===id);
+  if(!c) return;
+  const r = computeCommission_(c);
+  if(!r.matched){
+    toast('पहिले यस ग्राहकको "बीमा योजना प्रकार" र "मुनाफामा सहभागिता" भर्नुहोस्, अनि मात्र भुक्तान चिन्ह लगाउन मिल्छ।');
+    openCustomerModal(id);
+    return;
+  }
+  if(!confirm(`${c.name} — ${commissionYearLabel_(r.year)} कमिसन: कुल रु. ${r.gross.toLocaleString("en-IN")}, TDS रु. ${r.tds.toLocaleString("en-IN")}, खुद रु. ${r.net.toLocaleString("en-IN")}।\n\nयो भुक्तान आजको मितिमा लग गर्ने हो?`)) return;
+
+  const dateStr = todayISO_();
+  const logEntry = {
+    customerId: c.id, name: c.name, policy: c.policy,
+    date: dateStr, category: r.category, bucketLabel: r.bucketLabel||"", policyYear: r.year,
+    type: r.year===1 ? "first" : "renewal",
+    premium: r.premium, rate: r.rate, gross: r.gross, tds: r.tds, net: r.net,
+  };
+  const remote = await apiCall("addCommissionLog", logEntry);
+  if(!remote || !remote.ok){ toast("कमिसन लग सेभ गर्न सकिएन। पछि फेरि प्रयास गर्नुहोस्।"); return; }
+  commissionLog.push((remote.item)||logEntry);
+
+  const patch = {
+    paidPremiumCount: (Number(c.paidPremiumCount)||0) + 1,
+    lastPaidDate: dateStr,
+    renewDate: addYearsToDateStr_(c.renewDate, 1) || c.renewDate,
+  };
+  Object.assign(c, patch);
+  await apiCall("updateCustomer", {id:c.id, ...patch});
+
+  toast(`${c.name} — ${commissionYearLabel_(r.year)} कमिसन (खुद रु. ${r.net.toLocaleString("en-IN")}) लग भयो।`);
+  renderOverview(); renderCustomerTable(); renderRenewTable();
+}
+
+// हालको नेपाली आर्थिक वर्ष (श्रावणदेखि आषाढसम्म) का १२ महिना फर्काउँछ। नोट: यहाँ
+// Gregorian महिनालाई नेपाली महिनासँग करिब-करिब (approximate) जोडिएको छ — जुलाई→
+// श्रावण ... जुन→आषाढ — किनभने वास्तविक BS पात्रो रूपान्तरणका लागि एउटा छुट्टै
+// पात्रो लाइब्रेरी चाहिन्छ जुन यहाँ समावेश गरिएको छैन। भुक्तान मिति (date) आफैं भने
+// सधैं ठ्याक्कै AD मिति नै हो, महिना-समूहीकरण मात्र approximate हो।
+function fiscalYearMonths_(refDate){
+  const NP_MONTHS = ["श्रावण","भाद्र","आश्विन","कार्तिक","मंसिर","पुष","माघ","फागुन","चैत","वैशाख","जेठ","आषाढ"];
+  const startYear = refDate.getMonth() >= 6 ? refDate.getFullYear() : refDate.getFullYear()-1;
+  const months = [];
+  for(let i=0;i<12;i++){
+    const m = (6+i) % 12;
+    const y = startYear + Math.floor((6+i)/12);
+    months.push({ year:y, month:m, label:NP_MONTHS[i] });
+  }
+  return months;
+}
+
+function renderCommissionChart(){
+  const canvas = document.getElementById("commissionChart");
+  if(!canvas || typeof Chart === "undefined") return;
+  const months = fiscalYearMonths_(today);
+  const firstData = months.map(m => commissionLog.filter(l=>l.type==="first" && isDateInMonth_(l.date,m.year,m.month)).reduce((s,l)=>s+(Number(l.net)||0),0));
+  const renewData = months.map(m => commissionLog.filter(l=>l.type==="renewal" && isDateInMonth_(l.date,m.year,m.month)).reduce((s,l)=>s+(Number(l.net)||0),0));
+  const labels = months.map(m=>m.label);
+
+  if(window._commissionChartInstance) window._commissionChartInstance.destroy();
+  window._commissionChartInstance = new Chart(canvas, {
+    type: "bar",
+    data: {
+      labels,
+      datasets: [
+        { label: "नयाँ (First Premium)", data: firstData, backgroundColor: "#c9a227" },
+        { label: "नविकरण (Renewal)", data: renewData, backgroundColor: "#0b3d2e" },
+      ]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      scales: {
+        x: { stacked:true },
+        y: { stacked:true, ticks:{ callback:v=>"रु. "+Number(v).toLocaleString("en-IN") } }
+      },
+      plugins: { legend:{ position:"bottom" } }
+    }
+  });
+}
+
+// माथिकै जस्तै तर कमिसन (net) होइन, वास्तविक संकलित वार्षिक प्रिमियम (premium) रकम
+// महिनावार देखाउँछ — "प्रिमियम संकलन (मासिक)" स्ट्याट कार्डको १२-महिने इतिहास संस्करण।
+function renderPremiumChart(){
+  const canvas = document.getElementById("premiumChart");
+  if(!canvas || typeof Chart === "undefined") return;
+  const months = fiscalYearMonths_(today);
+  const firstData = months.map(m => commissionLog.filter(l=>l.type==="first" && isDateInMonth_(l.date,m.year,m.month)).reduce((s,l)=>s+(Number(l.premium)||0),0));
+  const renewData = months.map(m => commissionLog.filter(l=>l.type==="renewal" && isDateInMonth_(l.date,m.year,m.month)).reduce((s,l)=>s+(Number(l.premium)||0),0));
+  const labels = months.map(m=>m.label);
+
+  if(window._premiumChartInstance) window._premiumChartInstance.destroy();
+  window._premiumChartInstance = new Chart(canvas, {
+    type: "bar",
+    data: {
+      labels,
+      datasets: [
+        { label: "नयाँ (First Premium)", data: firstData, backgroundColor: "#c9a227" },
+        { label: "नविकरण (Renewal)", data: renewData, backgroundColor: "#0b3d2e" },
+      ]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      scales: {
+        x: { stacked:true },
+        y: { stacked:true, ticks:{ callback:v=>"रु. "+Number(v).toLocaleString("en-IN") } }
+      },
+      plugins: { legend:{ position:"bottom" } }
+    }
+  });
+}
 
 let recentPolicyholders = [];
 let downlineAgents = [];
+let commissionLog = []; // वास्तविक भुक्तान भएका (paid) कमिसन घटनाहरूको इतिहास — "यो महिना कमिसन" र १२-महिने ग्राफ दुवै यहींबाट आउँछन्।
 
 // व्यावसायिक उपलब्धि (Professional Achievement) — यो स्थिर (static) सूची हो, database query
 // जाँदैन। नयाँ उपलब्धि थप्न सिधै यहीँ array सम्पादन गर्नुहोस्।
@@ -1781,10 +2055,11 @@ async function adminLogin(){
 // लगइन-पछि मात्र चल्ने — ग्राहकको संवेदनशील पूरा सूची अनाधिकृत व्यक्तिको ब्राउजरमा कहिल्यै लोड नहोस् भनेर।
 // तीनवटै अनुरोध समानान्तर (parallel) पठाइन्छ ताकि Apps Script को ढिलो प्रतिक्रिया थप नजोडिओस्।
 async function loadAdminData(){
-  const [remoteCustomers, remoteProspects, remoteTargets] = await Promise.all([
+  const [remoteCustomers, remoteProspects, remoteTargets, remoteLog] = await Promise.all([
     apiCall("getCustomers"),
     apiCall("getProspects"),
     apiCall("getTargets"),
+    apiCall("getCommissionLog"),
   ]);
 
   const errors = [];
@@ -1802,6 +2077,11 @@ async function loadAdminData(){
     targets = remoteTargets.targets;
   } else {
     errors.push("टार्गेट: " + (remoteTargets && remoteTargets.error ? remoteTargets.error : "डेटा ल्याउन सकिएन।"));
+  }
+  if(remoteLog && remoteLog.ok && Array.isArray(remoteLog.items)){
+    commissionLog = remoteLog.items;
+  } else {
+    errors.push("कमिसन लग: " + (remoteLog && remoteLog.error ? remoteLog.error : "डेटा ल्याउन सकिएन।"));
   }
 
   if(errors.length){
@@ -2669,16 +2949,20 @@ function renderOverview(){
   const due = customers.filter(c=>daysUntil(c.renewDate)<=30);
   document.getElementById("ovDueThisMonth").textContent = due.length;
 
-  const totalPremium = customers.reduce((s,c)=>s+c.premium,0);
-  const commission = Math.round(totalPremium * COMMISSION_RATE);
-  document.getElementById("ovCommission").textContent = fmtMoney(commission);
+  const totalPremium = customers.reduce((s,c)=>s+(Number(c.premium)||0),0);
+
+  // "यो महिना" भन्ने जुनसुकै आँकडा (मासिक प्रिमियम संकलन, कमिसन) सबै यहीं एकपटक
+  // गणना गरिएको thisMonthLogs बाट आउँछ — वास्तविक "भुक्तान भयो" लग गरिएका
+  // प्रविष्टिहरू, अनुमानित/स्थिर भाग (जस्तै कुल/१२) होइन।
+  const thisMonthLogs = commissionLog.filter(l=>isDateInMonth_(l.date, today.getFullYear(), today.getMonth()));
+  const monthlyPremiumCollected = thisMonthLogs.reduce((s,l)=>s+(Number(l.premium)||0),0);
 
   const clubPct = Math.min(100, Math.round((totalPremium/targets.club)*100));
   document.getElementById("ovClubPct").textContent = clubPct + "%";
   document.getElementById("ovClubBar").style.width = clubPct + "%";
 
-  const monthlyPct = Math.min(100, Math.round((totalPremium/12/targets.monthly)*100));
-  document.getElementById("ovMonthlyPremium").textContent = fmtMoney(totalPremium/12);
+  const monthlyPct = Math.min(100, Math.round((monthlyPremiumCollected/targets.monthly)*100));
+  document.getElementById("ovMonthlyPremium").textContent = fmtMoney(monthlyPremiumCollected);
   document.getElementById("ovMonthlyBar").style.width = monthlyPct + "%";
   document.getElementById("ovMonthlyNote").textContent = `लक्ष्य रु. ${targets.monthly.toLocaleString("en-IN")} को ${monthlyPct}%`;
 
@@ -2686,6 +2970,51 @@ function renderOverview(){
   document.getElementById("ovYearlyPremium").textContent = fmtMoney(totalPremium);
   document.getElementById("ovYearlyBar").style.width = yearlyPct + "%";
   document.getElementById("ovYearlyNote").textContent = `लक्ष्य रु. ${targets.yearly.toLocaleString("en-IN")} को ${yearlyPct}%`;
+
+  /* ---- यो महिना कमिसन — वास्तविक भुक्तान लग (commissionLog) बाट, समूहगत ---- */
+  const grossTotal = thisMonthLogs.reduce((s,l)=>s+(Number(l.gross)||0),0);
+  const tdsTotal = thisMonthLogs.reduce((s,l)=>s+(Number(l.tds)||0),0);
+  const netTotal = grossTotal - tdsTotal;
+
+  document.getElementById("ovCommission").textContent = fmtMoney(netTotal);
+  const subEl = document.getElementById("ovCommissionSub");
+  if(subEl) subEl.textContent = `कुल रु. ${grossTotal.toLocaleString("en-IN")} − TDS (२०%) रु. ${tdsTotal.toLocaleString("en-IN")} = खुद रु. ${netTotal.toLocaleString("en-IN")}`;
+
+  // योजना प्रकार अनुसार समूहगत ब्रेकडाउन
+  const groups = {};
+  thisMonthLogs.forEach(l=>{
+    const key = l.category || "अन्य";
+    if(!groups[key]) groups[key] = { count:0, premium:0, gross:0, tds:0, net:0 };
+    groups[key].count++;
+    groups[key].premium += Number(l.premium)||0;
+    groups[key].gross += Number(l.gross)||0;
+    groups[key].tds += Number(l.tds)||0;
+    groups[key].net += Number(l.net)||0;
+  });
+  const breakdownEl = document.getElementById("ovCommissionBreakdown");
+  if(breakdownEl){
+    const rows = Object.keys(groups).map(cat=>{
+      const g = groups[cat];
+      return `<tr><td>${cat}</td><td class="mono">${g.count}</td><td class="mono">${fmtMoney(g.premium)}</td><td class="mono">${fmtMoney(g.gross)}</td><td class="mono">${fmtMoney(g.tds)}</td><td class="mono"><b>${fmtMoney(g.net)}</b></td></tr>`;
+    }).join("");
+    breakdownEl.innerHTML = rows || `<tr><td colspan="6"><div class="empty-state"><div class="glyph"><i class="fa-solid fa-calculator"></i></div>यो महिना अझै कुनै भुक्तान लग गरिएको छैन।</div></td></tr>`;
+  }
+
+  // ड्यु भएका तर अझै "भुक्तान भयो" चिन्ह नलागेका ग्राहकको सम्झना (यिनको कमिसन माथिको जोडमा छैन)
+  const duePending = due.filter(c=>!isDateInMonth_(c.lastPaidDate, today.getFullYear(), today.getMonth()));
+  const warnBox = document.getElementById("ovCommissionWarning");
+  if(warnBox){
+    if(duePending.length){
+      warnBox.classList.remove("hidden");
+      warnBox.querySelector("span").textContent =
+        `${duePending.length} ग्राहकको नविकरण ड्यु छ तर यो महिनाको भुक्तान अझै लग गरिएको छैन (माथिको कमिसन जोडमा समावेश छैन): ${duePending.map(c=>c.name).join(", ")}। भुक्तान संकलन गरेपछि ग्राहक तालिकामा "भुक्तान भयो" थिच्नुहोस्।`;
+    } else {
+      warnBox.classList.add("hidden");
+    }
+  }
+
+  renderCommissionChart();
+  renderPremiumChart();
 
   const sortedDue = [...due].sort((a,b)=>daysUntil(a.renewDate)-daysUntil(b.renewDate)).slice(0,6);
   document.getElementById("ovRenewTable").innerHTML = sortedDue.length ? sortedDue.map(c=>`
@@ -2705,6 +3034,7 @@ function renderCustomerTable(){
       <td class="mono">${fmtMoney(c.premium)}</td>
       <td>${fmtDate(c.renewDate)} ${statusTag(daysUntil(c.renewDate))}</td>
       <td style="white-space:nowrap;">
+        <button class="icon-btn" title="भुक्तान भयो (कमिसन लग गर्नुहोस्)" onclick="markPremiumPaid('${c.id}')"><i class="fa-solid fa-money-bill-wave"></i></button>
         <button class="icon-btn" onclick="openCustomerModal('${c.id}')"><i class="fa-solid fa-pen"></i></button>
         <button class="icon-btn" onclick="deleteCustomer('${c.id}')"><i class="fa-solid fa-trash"></i></button>
       </td>
@@ -2752,6 +3082,8 @@ function openCustomerModal(id){
     document.getElementById("cPremium").value = c.premium;
     document.getElementById("cTerm").value = c.term;
     document.getElementById("cRenewDate").value = c.renewDate;
+    document.getElementById("cSchemeCategory").value = c.schemeCategory || "";
+    document.getElementById("cParticipating").value = c.participating || "";
     document.getElementById("cRiders").value = (c.riders||[]).join(", ");
     document.getElementById("cAddress").value = c.address || "";
     document.getElementById("cEmail").value = c.email || "";
@@ -2762,7 +3094,7 @@ function openCustomerModal(id){
   } else {
     document.getElementById("custModalTitle").textContent = "नयाँ ग्राहक थप्नुहोस्";
     ["cEditId","cName","cPolicy","cPhone","cDobBS","cDobAD","cSum","cPremium","cTerm","cRenewDate","cRiders",
-     "cAddress","cEmail","cCitizenship","cNationalId","cPaidCount","cPhotoUrl"].forEach(id=>document.getElementById(id).value="");
+     "cAddress","cEmail","cCitizenship","cNationalId","cPaidCount","cPhotoUrl","cSchemeCategory","cParticipating"].forEach(id=>document.getElementById(id).value="");
   }
 }
 function closeCustomerModal(){ document.getElementById("customerModalBackdrop").classList.remove("open"); }
@@ -2780,6 +3112,8 @@ async function saveCustomer(){
     premium: Number(document.getElementById("cPremium").value)||0,
     term: Number(document.getElementById("cTerm").value)||0,
     renewDate: document.getElementById("cRenewDate").value.trim(),
+    schemeCategory: document.getElementById("cSchemeCategory").value,
+    participating: document.getElementById("cParticipating").value,
     riders: document.getElementById("cRiders").value.split(",").map(s=>s.trim()).filter(Boolean),
     address: document.getElementById("cAddress").value.trim(),
     email: document.getElementById("cEmail").value.trim(),
