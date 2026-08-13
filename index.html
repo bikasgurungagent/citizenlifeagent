@@ -831,6 +831,15 @@ tr:hover td{background:var(--cream);}
     <article id="blogPostArticle"></article>
   </div>
 </div>
+
+<!-- Full policy-info detail view -- same reused-header/footer pattern as
+     blogPostView above, toggled via openPolicyPost()/closePolicyPost(). -->
+<div id="policyPostView" class="hidden">
+  <div class="wrap blogpost-wrap">
+    <button class="btn ghost sm" onclick="closePolicyPost()"><i class="fa-solid fa-arrow-left"></i> योजनाहरूमा फर्कनुहोस्</button>
+    <article id="policyPostArticle"></article>
+  </div>
+</div>
 </main>
 
 <footer class="site">
@@ -1083,7 +1092,7 @@ tr:hover td{background:var(--cream);}
       </div>
       <div class="panel">
         <div class="panel-head"><h3><i class="fa-solid fa-chart-column"></i> प्रिमियम संकलन ट्रेन्ड — चालु आर्थिक वर्ष (१२ महिना)</h3></div>
-        <p style="font-size:.78rem; color:var(--ink-soft); margin:-6px 0 12px;">महिनावार वास्तविक संकलित प्रिमियम (नयाँ र नविकरण छुट्याएर) — "भुक्तान भयो" लग गरिएका प्रविष्टिहरूबाट, कुनै अनुमान/estimate होइन।</p>
+        <p style="font-size:.78rem; color:var(--ink-soft); margin:-6px 0 12px;">महिनावार वास्तविक संकलित प्रिमियम (नयाँ र नविकरण छुट्याएर) — ग्राहकको तिरिसकेको प्रिमियम संख्या/अन्तिम भुक्तान मितिबाट लाइभ हिसाब, कुनै अनुमान/estimate होइन।</p>
         <div style="position:relative; height:280px;"><canvas id="premiumChart"></canvas></div>
       </div>
       <div class="grid-2">
@@ -1179,6 +1188,7 @@ tr:hover td{background:var(--cream);}
       <div class="network-tabs" style="margin-bottom:18px; flex-wrap:wrap;">
         <button class="network-tab active" data-content="agents" onclick="setContentType('agents', this)">Downline Agents</button>
         <button class="network-tab" data-content="blogs" onclick="setContentType('blogs', this)">ब्लग</button>
+        <button class="network-tab" data-content="policyInfo" onclick="setContentType('policyInfo', this)">पोलिसी जानकारी</button>
       </div>
       <div class="panel">
         <div class="table-scroll"><table>
@@ -1470,14 +1480,17 @@ function commissionYearLabel_(year){
   return "दशौं वर्षपछि";
 }
 
-// ग्राहकको लागि लागू हुने कमिसन (gross/TDS/net) हिसाब गर्छ। "बीमा योजना प्रकार" वा
-// "मुनाफामा सहभागिता" भरिएको छैन भने matched:false फर्काउँछ — यस्तो ग्राहकलाई
-// टोटलमा नजोड्नुहोस् र बरु agent लाई विवरण पूरा गर्न भन्नुहोस्, किनभने अनुमान गरेर
-// देखाइएको गलत रकमले एजेन्टलाई गलत आम्दानी अपेक्षा दिन सक्छ।
-function computeCommission_(c){
+// ग्राहकको लागि दिइएको "बीमा वर्ष" (year) मा लागू हुने कमिसन (gross/TDS/net) हिसाब
+// गर्छ। "बीमा योजना प्रकार" वा "मुनाफामा सहभागिता" भरिएको छैन वा वर्ष अमान्य भने
+// matched:false फर्काउँछ — यस्तो ग्राहकलाई टोटलमा नजोड्नुहोस् र बरु agent लाई विवरण
+// पूरा गर्न भन्नुहोस्, किनभने अनुमान गरेर देखाइएको गलत रकमले एजेन्टलाई गलत आम्दानी
+// अपेक्षा दिन सक्छ। यो एउटै तालिका-खोज दुई ठाउँमा प्रयोग हुन्छ: (क) अर्को/आउँदो
+// किस्ताको "प्रिभ्यू" (computeCommission_, वर्ष = policyYearOf_) र (ख) पहिले नै
+// तिरिसकेको अन्तिम किस्ताको "कमाएको" रकम (computeEarnedCommission_, वर्ष =
+// paidPremiumCount आफैं) — दुवैको मूल गणना उस्तै हो, फरक केवल कुन वर्ष प्रयोग हुन्छ भन्नेमा छ।
+function computeCommissionForYear_(c, year){
   const category = c.schemeCategory || "";
   const premium = Number(c.premium)||0;
-  const year = policyYearOf_(c);
   const participatingKey = c.participating === "participating" ? "p" : "np";
 
   let rateRow = null, bucketLabel = "";
@@ -1492,7 +1505,7 @@ function computeCommission_(c){
     bucketLabel = subtype;
   }
 
-  if(!rateRow || !premium || !c.participating){
+  if(!rateRow || !premium || !c.participating || !year || year < 1){
     return { matched:false, category, premium, gross:0, tds:0, net:0 };
   }
 
@@ -1513,18 +1526,40 @@ function computeCommission_(c){
   return { matched:true, category, bucketLabel, year, rate, premium, gross, tds, net };
 }
 
+// अर्को/आउँदो (अझै नतिरिएको) किस्ताको लागि "प्रिभ्यू" कमिसन — "भुक्तान भयो" थिच्दा
+// देखाइने पुष्टि-सन्देशमा प्रयोग हुन्छ।
+function computeCommission_(c){
+  return computeCommissionForYear_(c, policyYearOf_(c));
+}
+
+// पहिले नै तिरिसकेको अन्तिम किस्ताको "कमाएको" कमिसन — डेटाबेसमा भएको paidPremiumCount
+// बाटै प्रत्यक्ष निकालिन्छ (कुनै छुट्टै लग/इभेन्ट चाहिँदैन), त्यसैले Admin Dashboard
+// मा manual "Paid" क्लिक नगरिकनै (जस्तै Sheet मा सिधै संख्या भरे पनि) यो स्वतः
+// देखिन्छ। तिरिसकेको प्रिमियम संख्या ० वा खाली भए (अझै एउटै तिरेको छैन) matched:false।
+function computeEarnedCommission_(c){
+  const year = Number(c.paidPremiumCount) || 0;
+  if(year < 1) return { matched:false, category: c.schemeCategory||"", premium:0, gross:0, tds:0, net:0 };
+  return computeCommissionForYear_(c, year);
+}
+
 /* ============================================================
-   COMMISSION LOG — वास्तविक भुक्तान भएको घटना (event) आधारमा
+   COMMISSION — अब पूर्ण रूपमा "लाइभ" (कुनै छुट्टै लग/इभेन्ट छैन)
    ============================================================
    पहिले "यो महिना कमिसन" लाई "नविकरण ड्यु" (आउँदो ३० दिनभित्र) सूचीबाट अनुमान
    गरिन्थ्यो — तर ग्राहकले नविकरण गरिसकेपछि agent ले renewDate अर्को वर्षलाई सारेको
    बित्तिकै त्यो ग्राहक "ड्यु" सूचीबाट हराउँथ्यो, र त्यसैले साँच्चै यो महिना तिरेको
-   भए पनि कमिसन गणनामा कहिल्यै देखिँदैनथ्यो। यही थियो रिपोर्ट भएको बग।
+   भए पनि कमिसन गणनामा कहिल्यै देखिँदैनथ्यो। बीचमा एउटा छुट्टै "commissionLog"
+   इभेन्ट-लग (हरेक "भुक्तान भयो" क्लिकमा बन्ने) राखिएको थियो, तर त्यसले फेरि उही
+   समस्या ल्यायो: लग नबनेसम्म (जस्तै Sheet मा सिधै संख्या भरिएको भए, क्लिक नै
+   नभएको) कमिसन Admin Dashboard मा कहिल्यै देखिँदैनथ्यो।
 
-   अब हरेक पटक "भुक्तान भयो" थिचिँदा एउटा स्थायी लग प्रविष्टि (/commissionLog मा)
-   बन्छ, र "यो महिना कमिसन" त्यही लगबाट (renewDate बाट होइन) गणना हुन्छ — त्यसैले
-   ढिलो/चाँडो अपडेट भए पनि सही महिनामै देखिन्छ, र १२-महिने ग्राफको लागि इतिहास पनि
-   बन्दै जान्छ।
+   अहिले कमिसन ग्राहकको रेकर्डमा भएको paidPremiumCount (तिरिसकेको प्रिमियम संख्या)
+   र lastPaidDate बाटै सिधै, हरेक पटक Dashboard लोड हुँदा प्रत्यक्ष हिसाब गरिन्छ
+   (हेर्नुहोस् computeEarnedCommission_ र renderOverview/monthAmount_) — छुट्टै
+   लग-लेख्ने कुनै step चाहिँदैन। ट्रेडअफ: यसले केवल हाल के छ (paidPremiumCount र
+   lastPaidDate को अहिलेको मान) मात्र देखाउँछ; ग्राहकले अर्को किस्ता तिरेपछि
+   lastPaidDate अगाडि सर्छ, र त्यो अघिल्लो महिनाको वास्तविक इतिहास ठ्याक्कै
+   जोगिँदैन (हेर्नुहोस् monthAmount_ माथिको टिप्पणी)।
    ============================================================ */
 function todayISO_(){
   return today.getFullYear() + "-" + String(today.getMonth()+1).padStart(2,"0") + "-" + String(today.getDate()).padStart(2,"0");
@@ -1541,11 +1576,12 @@ function isDateInMonth_(dateStr, year, month){
   if(isNaN(d.getTime())) return false;
   return d.getFullYear()===year && d.getMonth()===month;
 }
-
-// एजेन्टले ग्राहकको प्रिमियम भुक्तान संकलन गरेपछि यो चलाउनुहोस्। यसले: (१) आजको
-// मितिमा एउटा कमिसन-लग प्रविष्टि बनाउँछ (First Premium हो कि Renewal हो भन्ने
-// स्वतः थाहा पाएर), (२) ग्राहकको तिरिसकेको प्रिमियम संख्या +१ गर्छ, (३) नविकरण
-// मिति १ वर्ष पर सार्छ, (४) अन्तिम भुक्तान मिति रेकर्ड गर्छ।
+// एजेन्टले ग्राहकको प्रिमियम भुक्तान संकलन गरेपछि यो चलाउनुहोस् (यो केवल एउटा
+// सुविधाजनक शर्टकट हो — paidPremiumCount र lastPaidDate चाहेमा Sheet/ग्राहक-फारम
+// मार्फत सिधै पनि अपडेट गर्न सकिन्छ, त्यसो भए पनि कमिसन उस्तै स्वतः देखिन्छ)।
+// यसले: (१) ग्राहकको तिरिसकेको प्रिमियम संख्या +१ गर्छ, (२) नविकरण मिति १ वर्ष पर
+// सार्छ, (३) अन्तिम भुक्तान मिति रेकर्ड गर्छ। कमिसन कुनै छुट्टै लगमा लेखिँदैन —
+// यो अपडेट भएपछि Dashboard ले computeEarnedCommission_ मार्फत आफै हिसाब गर्छ।
 async function markPremiumPaid(id){
   const c = customers.find(x=>x.id===id);
   if(!c) return;
@@ -1555,19 +1591,9 @@ async function markPremiumPaid(id){
     openCustomerModal(id);
     return;
   }
-  if(!confirm(`${c.name} — ${commissionYearLabel_(r.year)} कमिसन: कुल रु. ${r.gross.toLocaleString("en-IN")}, TDS रु. ${r.tds.toLocaleString("en-IN")}, खुद रु. ${r.net.toLocaleString("en-IN")}।\n\nयो भुक्तान आजको मितिमा लग गर्ने हो?`)) return;
+  if(!confirm(`${c.name} — ${commissionYearLabel_(r.year)} कमिसन: कुल रु. ${r.gross.toLocaleString("en-IN")}, TDS रु. ${r.tds.toLocaleString("en-IN")}, खुद रु. ${r.net.toLocaleString("en-IN")}।\n\nयो भुक्तान आजको मितिमा रेकर्ड गर्ने हो?`)) return;
 
   const dateStr = todayISO_();
-  const logEntry = {
-    customerId: c.id, name: c.name, policy: c.policy,
-    date: dateStr, category: r.category, bucketLabel: r.bucketLabel||"", policyYear: r.year,
-    type: r.year===1 ? "first" : "renewal",
-    premium: r.premium, rate: r.rate, gross: r.gross, tds: r.tds, net: r.net,
-  };
-  const remote = await apiCall("addCommissionLog", logEntry);
-  if(!remote || !remote.ok){ toast("कमिसन लग सेभ गर्न सकिएन। पछि फेरि प्रयास गर्नुहोस्।"); return; }
-  commissionLog.push((remote.item)||logEntry);
-
   const patch = {
     paidPremiumCount: (Number(c.paidPremiumCount)||0) + 1,
     lastPaidDate: dateStr,
@@ -1576,7 +1602,7 @@ async function markPremiumPaid(id){
   Object.assign(c, patch);
   await apiCall("updateCustomer", {id:c.id, ...patch});
 
-  toast(`${c.name} — ${commissionYearLabel_(r.year)} कमिसन (खुद रु. ${r.net.toLocaleString("en-IN")}) लग भयो।`);
+  toast(`${c.name} — ${commissionYearLabel_(r.year)} कमिसन (खुद रु. ${r.net.toLocaleString("en-IN")}) रेकर्ड भयो।`);
   renderOverview(); renderCustomerTable(); renderRenewTable();
 }
 
@@ -1597,12 +1623,35 @@ function fiscalYearMonths_(refDate){
   return months;
 }
 
+// लाइभ गणना: कुनै छुट्टै लग नभई, सीधै customers array बाट, "यस महिना" भनेको
+// जुन ग्राहकको lastPaidDate त्यही महिनाभित्र पर्छ, ती हुन्। "पहिलो" वा "नविकरण"
+// (type) ग्राहकको हालको paidPremiumCount ले नै देखाउँछ (=1 भए पहिलो किस्ता,
+// >1 भए नविकरण -- यो सधैं "अन्तिम पटक तिरेको किस्ता" लाई जनाउँछ, नत्र होइन)।
+//
+// सीमा (जानीजानी स्वीकारिएको ट्रेडअफ): ग्राहकको रेकर्डमा एउटै lastPaidDate मात्र
+// बचेको हुन्छ (पूर्ण इतिहास होइन) -- त्यसैले ग्राहकले अर्को किस्ता तिरेपछि
+// lastPaidDate अगाडि सर्छ, र अघिल्लो महिनाको त्यो प्रविष्टि यहाँबाट हराउँछ। यसैले
+// तलको १२-महिने ग्राफ भविष्यमा गएर पुरानो महिनाहरूको लागि घट्दै/खाली देखिन सक्छ --
+// यो साँच्चै "अहिले-सम्मको-जानकारी" (current snapshot) हो, स्थायी इतिहास होइन।
+function monthAmount_(m, type, field){
+  return customers
+    .filter(c => (Number(c.paidPremiumCount)||0) >= 1)
+    .filter(c => isDateInMonth_(c.lastPaidDate, m.year, m.month))
+    .filter(c => ((Number(c.paidPremiumCount)===1) ? "first" : "renewal") === type)
+    .reduce((sum, c) => {
+      if(field === "premium") return sum + (Number(c.premium)||0);
+      const r = computeEarnedCommission_(c);
+      return sum + (r && r.matched ? (Number(r[field])||0) : 0);
+    }, 0);
+}
+
 function renderCommissionChart(){
   const canvas = document.getElementById("commissionChart");
-  if(!canvas || typeof Chart === "undefined") return;
+  if(!canvas){ console.warn("[renderCommissionChart] #commissionChart canvas फेला परेन।"); return; }
+  if(typeof Chart === "undefined"){ console.warn("[renderCommissionChart] Chart.js लोड भएको छैन (CDN ब्लक भएको हुन सक्छ) — चार्ट खाली देखिनेछ।"); return; }
   const months = fiscalYearMonths_(today);
-  const firstData = months.map(m => commissionLog.filter(l=>l.type==="first" && isDateInMonth_(l.date,m.year,m.month)).reduce((s,l)=>s+(Number(l.net)||0),0));
-  const renewData = months.map(m => commissionLog.filter(l=>l.type==="renewal" && isDateInMonth_(l.date,m.year,m.month)).reduce((s,l)=>s+(Number(l.net)||0),0));
+  const firstData = months.map(m => monthAmount_(m, "first", "net"));
+  const renewData = months.map(m => monthAmount_(m, "renewal", "net"));
   const labels = months.map(m=>m.label);
 
   if(window._commissionChartInstance) window._commissionChartInstance.destroy();
@@ -1631,10 +1680,11 @@ function renderCommissionChart(){
 // महिनावार देखाउँछ — "प्रिमियम संकलन (मासिक)" स्ट्याट कार्डको १२-महिने इतिहास संस्करण।
 function renderPremiumChart(){
   const canvas = document.getElementById("premiumChart");
-  if(!canvas || typeof Chart === "undefined") return;
+  if(!canvas){ console.warn("[renderPremiumChart] #premiumChart canvas फेला परेन।"); return; }
+  if(typeof Chart === "undefined"){ console.warn("[renderPremiumChart] Chart.js लोड भएको छैन (CDN ब्लक भएको हुन सक्छ) — चार्ट खाली देखिनेछ।"); return; }
   const months = fiscalYearMonths_(today);
-  const firstData = months.map(m => commissionLog.filter(l=>l.type==="first" && isDateInMonth_(l.date,m.year,m.month)).reduce((s,l)=>s+(Number(l.premium)||0),0));
-  const renewData = months.map(m => commissionLog.filter(l=>l.type==="renewal" && isDateInMonth_(l.date,m.year,m.month)).reduce((s,l)=>s+(Number(l.premium)||0),0));
+  const firstData = months.map(m => monthAmount_(m, "first", "premium"));
+  const renewData = months.map(m => monthAmount_(m, "renewal", "premium"));
   const labels = months.map(m=>m.label);
 
   if(window._premiumChartInstance) window._premiumChartInstance.destroy();
@@ -1661,7 +1711,9 @@ function renderPremiumChart(){
 
 let recentPolicyholders = [];
 let downlineAgents = [];
-let commissionLog = []; // वास्तविक भुक्तान भएका (paid) कमिसन घटनाहरूको इतिहास — "यो महिना कमिसन" र १२-महिने ग्राफ दुवै यहींबाट आउँछन्।
+// नोट: पहिले यहाँ commissionLog (इभेन्ट-लग) राखिएको थियो। अब कमिसन customers array
+// बाटै लाइभ हिसाब हुन्छ (computeEarnedCommission_ हेर्नुहोस्), त्यसैले छुट्टै लग
+// राख्नु आवश्यक छैन।
 
 // व्यावसायिक उपलब्धि (Professional Achievement) — यो स्थिर (static) सूची हो, database query
 // जाँदैन। नयाँ उपलब्धि थप्न सिधै यहीँ array सम्पादन गर्नुहोस्।
@@ -1883,7 +1935,7 @@ function updateNavAuthUI(){
 }
 
 /* ============================================================
-   URL ROUTING — #home, #login, #member, #admin, #blog/<id>
+   URL ROUTING — #home, #login, #member, #admin, #blog/<id>, #policy/<permalink>
    हरेक मुख्य पेज (Home, Login, Member/ग्राहक, Admin, Blog post) को आफ्नै unique URL हुन्छ,
    जुन copy/share/bookmark गर्न मिल्छ, र browser को Back/Forward बटनले पनि सही काम गर्छ।
    ============================================================ */
@@ -1903,8 +1955,8 @@ async function handleRoute(){
     if(session.role !== "admin"){ showView("view-login"); setLoginTab("admin"); return; }
     showLoading("ड्यासबोर्ड लोड हुँदैछ...");
     try{ await loadAdminData(); } finally { hideLoading(); }
-    renderAdminAll();
     showView("view-admin");
+    renderAdminAll();
   } else if(route === "member"){
     if(session.role !== "customer" || !session.customer){ showView("view-login"); setLoginTab("customer"); return; }
     renderUserDashboard(session.customer);
@@ -1914,10 +1966,16 @@ async function handleRoute(){
     setLoginTab(param || "customer");
   } else if(route === "blog" && param){
     showView("view-public");
+    closePolicyPost(false);
     openBlogPost(param, false);
+  } else if(route === "policy" && param){
+    showView("view-public");
+    closeBlogPost(false);
+    openPolicyPost(param, false);
   } else {
     showView("view-public");
     closeBlogPost(false);
+    closePolicyPost(false);
   }
 }
 window.addEventListener("popstate", handleRoute);
@@ -2055,11 +2113,10 @@ async function adminLogin(){
 // लगइन-पछि मात्र चल्ने — ग्राहकको संवेदनशील पूरा सूची अनाधिकृत व्यक्तिको ब्राउजरमा कहिल्यै लोड नहोस् भनेर।
 // तीनवटै अनुरोध समानान्तर (parallel) पठाइन्छ ताकि Apps Script को ढिलो प्रतिक्रिया थप नजोडिओस्।
 async function loadAdminData(){
-  const [remoteCustomers, remoteProspects, remoteTargets, remoteLog] = await Promise.all([
+  const [remoteCustomers, remoteProspects, remoteTargets] = await Promise.all([
     apiCall("getCustomers"),
     apiCall("getProspects"),
     apiCall("getTargets"),
-    apiCall("getCommissionLog"),
   ]);
 
   const errors = [];
@@ -2078,12 +2135,6 @@ async function loadAdminData(){
   } else {
     errors.push("टार्गेट: " + (remoteTargets && remoteTargets.error ? remoteTargets.error : "डेटा ल्याउन सकिएन।"));
   }
-  if(remoteLog && remoteLog.ok && Array.isArray(remoteLog.items)){
-    commissionLog = remoteLog.items;
-  } else {
-    errors.push("कमिसन लग: " + (remoteLog && remoteLog.error ? remoteLog.error : "डेटा ल्याउन सकिएन।"));
-  }
-
   if(errors.length){
     showAdminError(errors.join(" · "));
   } else {
@@ -2138,14 +2189,50 @@ let PLANS = [
   {id:"pl6", tag:"Group", name:"Citizen Group Term Insurance Plan", desc:"६४ वर्षसम्म नविकरण गर्न मिल्ने एक वर्षे समूह टर्म बीमा — संस्था/समूहका लागि।"},
 ];
 function renderPlans(){
-  document.getElementById("plansGrid").innerHTML = PLANS.map(p=>`
+  document.getElementById("plansGrid").innerHTML = PLANS.map(p=>{
+    const match = findPolicyInfoForPlan_(p.name);
+    const linkHtml = match
+      ? `<a href="javascript:void(0)" class="btn ghost sm" style="width:fit-content;" onclick="openPolicyPost('${match.permalink}')">पूरा जानकारी →</a>`
+      : `<a href="#get" class="btn ghost sm" style="width:fit-content;">पूरा जानकारी →</a>`;
+    return `
     <div class="plan-card">
       <span class="plan-tag">${p.tag}</span>
       <h4>${p.name}</h4>
       <p>${p.desc}</p>
-      <a href="#get" class="btn ghost sm" style="width:fit-content;">विवरण चाहियो</a>
-    </div>`).join("");
+      ${linkHtml}
+    </div>`;
+  }).join("");
 }
+// PLANS (माथिको स्थिर array) लाई Firebase बाट आउने POLICYINFO (एजेन्टले Admin
+// Panel/Sheet बाट थपेको पूर्ण योजना विवरण) सँग नाम मिलाएर जोड्छ, ताकि "विवरण
+// चाहियो" बटनले WhatsApp फारमको सट्टा सिधै त्यही योजनाको पूरा पेज (#policy/...)
+// खोलोस्। PolicyInfo सिटको "PolicyName" स्तम्भ यहाँको plan.name सँग ठ्याक्कै
+// (ठूला-साना अक्षर र स्पेस बेवास्ता गरेर) मिल्नुपर्छ -- मिलेन भने पुरानै व्यवहार
+// (WhatsApp फारम) कायमै रहन्छ, पेज कहिल्यै भाँचिँदैन।
+function findPolicyInfoForPlan_(planName){
+  const norm = s => String(s||"").trim().toLowerCase().replace(/\s+/g," ").replace(/[.,]+$/,"");
+  return POLICYINFO.find(p => norm(p.title) === norm(planName));
+}
+// DIAGNOSTIC: run this from the browser console (F12 -> Console tab) any time
+// to see exactly why a Plan card's "पूरा जानकारी" button is/isn't linking to
+// its full PolicyInfo article. Prints (1) how many PolicyInfo records were
+// actually loaded into this browser session, (2) each Plan and whether it
+// found a match, and (3) the exact PolicyName text it needs, character for
+// character, if it did not match -- copy that exact text into the
+// "PolicyName" field of that PolicyInfo record to fix it.
+function debugPolicyInfoMatching(){
+  console.log(`[PolicyInfo debug] ${POLICYINFO.length} PolicyInfo record(s) currently loaded in this browser:`);
+  console.table(POLICYINFO.map(p=>({title:p.title, permalink:p.permalink})));
+  console.log("[PolicyInfo debug] Plan-by-plan match result:");
+  console.table(PLANS.map(p=>{
+    const match = findPolicyInfoForPlan_(p.name);
+    return { plan: p.name, matched: !!match, permalink: match ? match.permalink : "(none -- falls back to WhatsApp #get)" };
+  }));
+  if(POLICYINFO.length === 0){
+    console.warn("[PolicyInfo debug] No PolicyInfo records loaded at all. This means neither the direct Firebase read NOR the Apps Script fallback returned any data. Check: (1) did you actually add rows to the PolicyInfo sheet tab or Admin Panel, (2) did you run runOnce_importFromSheets after adding the PolicyInfo tab, (3) is CONFIG.APPS_SCRIPT_URL pointing at a deployment that includes the getPolicyInfo action (redeploy 'New version' after pasting the updated Code.gs), (4) hard-refresh this page (Ctrl+Shift+R) in case an old cached copy of this HTML file is still loaded.");
+  }
+}
+window.debugPolicyInfoMatching = debugPolicyInfoMatching;
 
 let BONUS_RATES = [
   {id:"br1", plan:"अग्रिम भुक्तानी सावधिक जीवन बीमालेख (Advance Premium Endowment)", rate:"रु ४४ – ५५"},
@@ -2317,6 +2404,20 @@ const CONTENT_TYPES = {
       {key:"featurePhoto", label:"तस्बिर URL (Feature Photo)", type:"text"},
       {key:"video", label:"भिडियो URL (Video, ऐच्छिक)", type:"text"},
       {key:"body", label:"पूरा लेख (Body — plain text वा HTML दुवै मिल्छ)", type:"textarea", rows:12},
+    ],
+  },
+  policyInfo: {
+    label: "पोलिसी जानकारी", apiPrefix: "PolicyInfo",
+    getList: () => POLICYINFO,
+    onSaved: renderPlans, // कुनै PolicyInfo थपियो/सम्पादन भयो भने #plans कार्डको "पूरा जानकारी" लिंक तुरुन्तै अपडेट होस्
+    fields: [
+      {key:"title", label:"पोलिसीको नाम (PolicyName)", type:"text"},
+      {key:"permalink", label:"Permalink (खाली छाडे शीर्षकबाटै बन्छ, जस्तै citizen-endowment-plus)", type:"text"},
+      {key:"excerpt", label:"छोटो सारांश (MetaInfo)", type:"text"},
+      {key:"date", label:"मिति (Update Date, जस्तै असार २०८२)", type:"text"},
+      {key:"featurePhoto", label:"तस्बिर URL (Feature Photo)", type:"text"},
+      {key:"video", label:"भिडियो URL (Video, ऐच्छिक)", type:"text"},
+      {key:"body", label:"पूरा विवरण (PolicyBody — plain text वा HTML दुवै मिल्छ)", type:"textarea", rows:12},
     ],
   },
 };
@@ -2554,6 +2655,123 @@ async function submitComment(blogId){
   toast("कमेन्ट पोस्ट भयो, धन्यवाद!");
 }
 
+/* ============================================================
+   POLICY INFO — no standalone listing section (removed); instead each Plan
+   card in #plans links directly into a policy's full detail view (same
+   article + comments layout as a Blog post), matched by name via
+   findPolicyInfoForPlan_() below. The shareable URL and lookup key are the
+   "Permalink" field, not the raw Firebase id (so an agent can set/change a
+   friendly URL independent of the internal id).
+   ============================================================ */
+let POLICYINFO = [];
+
+function openPolicyPost(permalink, push){
+  const policy = POLICYINFO.find(p=>p.permalink===permalink);
+  if(!policy){
+    // शेयर लिंकबाट सिधै आउँदा POLICYINFO अझै लोड नभएको हुन सक्छ — डेटा आइसकेपछि
+    // handleRoute() ले फेरि प्रयास गर्छ (loadPublicData_ हेर्नुहोस्)।
+    return;
+  }
+  if(push !== false) navigateTo("policy/"+permalink);
+
+  const shareUrl = location.origin + location.pathname + "#policy/" + permalink;
+  document.getElementById("policyPostArticle").innerHTML = `
+    <div class="blogpost-header">
+      <span class="date">${policy.date||""}</span>
+      <h1>${policy.title}</h1>
+    </div>
+    ${policy.featurePhoto ? `<img class="blogpost-hero" src="${policy.featurePhoto}" alt="${policy.title}">` : ""}
+    ${blogVideoEmbedHtml_(policy.video)}
+    <div class="blogpost-content">${policy.body || policy.excerpt || ""}</div>
+
+    <div class="blogpost-share">
+      <span class="blogpost-share-label"><i class="fa-solid fa-share-nodes"></i> सेयर गर्नुहोस्:</span>
+      <a class="share-btn share-fb" target="_blank" rel="noopener" href="https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(shareUrl)}"><i class="fa-brands fa-facebook-f"></i></a>
+      <a class="share-btn share-wa" target="_blank" rel="noopener" href="https://wa.me/?text=${encodeURIComponent(policy.title+' - '+shareUrl)}"><i class="fa-brands fa-whatsapp"></i></a>
+      <a class="share-btn share-x" target="_blank" rel="noopener" href="https://twitter.com/intent/tweet?text=${encodeURIComponent(policy.title)}&url=${encodeURIComponent(shareUrl)}"><i class="fa-brands fa-x-twitter"></i></a>
+      <button class="share-btn share-copy" onclick="copyPolicyLink('${permalink}', this)"><i class="fa-solid fa-link"></i></button>
+    </div>
+
+    <div class="blogpost-comments">
+      <h3><i class="fa-solid fa-comments"></i> कमेन्टहरू (<span id="policyCommentCount">0</span>)</h3>
+      <div id="policyCommentList" class="comment-list"></div>
+      <div class="comment-form">
+        <div class="form-row2" style="margin-bottom:10px;">
+          <div class="field"><label>नाम</label><input id="policyCommentName" placeholder="तपाईंको नाम"></div>
+          <div class="field"><label>इमेल (सार्वजनिक देखिँदैन, ऐच्छिक)</label><input id="policyCommentEmail" type="email" placeholder="ऐच्छिक"></div>
+        </div>
+        <div class="field" style="margin-bottom:12px;"><label>तपाईंको कमेन्ट</label><textarea id="policyCommentText" rows="3" placeholder="आफ्नो विचार लेख्नुहोस्..."></textarea></div>
+        <button class="btn gold sm" onclick="submitPolicyComment('${permalink}')"><i class="fa-solid fa-paper-plane"></i> कमेन्ट पोस्ट गर्नुहोस्</button>
+      </div>
+    </div>
+  `;
+  document.getElementById("mainSections").classList.add("hidden");
+  document.getElementById("policyPostView").classList.remove("hidden");
+  window.scrollTo(0,0);
+  loadPolicyComments(permalink);
+}
+function closePolicyPost(push){
+  if(policyCommentUnsubscribe_){ policyCommentUnsubscribe_(); policyCommentUnsubscribe_ = null; }
+  document.getElementById("policyPostView").classList.add("hidden");
+  document.getElementById("mainSections").classList.remove("hidden");
+  if(push !== false) navigateTo("home");
+  document.getElementById("plans").scrollIntoView({behavior:"smooth"});
+}
+function copyPolicyLink(permalink, btnEl){
+  const shareUrl = location.origin + location.pathname + "#policy/" + permalink;
+  navigator.clipboard.writeText(shareUrl).then(()=>{
+    toast("लिंक कपी भयो!");
+  }).catch(()=>{
+    toast("लिंक: " + shareUrl);
+  });
+}
+
+let policyCommentUnsubscribe_ = null;
+function renderPolicyComments_(list, loading){
+  if(loading){
+    document.getElementById("policyCommentList").innerHTML = `<p style="color:var(--ink-soft); font-size:.88rem;"><i class="fa-solid fa-spinner fa-spin"></i> कमेन्टहरू लोड हुँदैछ...</p>`;
+    return;
+  }
+  const sorted = list.slice().sort((a,b)=> new Date(b.createdAt||0) - new Date(a.createdAt||0));
+  document.getElementById("policyCommentCount").textContent = sorted.length;
+  document.getElementById("policyCommentList").innerHTML = sorted.length ? sorted.map(c=>`
+    <div class="comment-item">
+      <div class="comment-avatar">${(c.name||"?").trim().charAt(0).toUpperCase()}</div>
+      <div class="comment-body">
+        <div class="comment-meta"><b>${c.name||"अज्ञात"}</b><span>${commentTimeAgo_(c.createdAt)}</span></div>
+        <p>${c.comment||""}</p>
+      </div>
+    </div>`).join("") : `<p style="color:var(--ink-soft); font-size:.88rem;">अहिलेसम्म कुनै कमेन्ट छैन — पहिलो कमेन्ट तपाईंको होस्!</p>`;
+}
+function loadPolicyComments(permalink){
+  if(policyCommentUnsubscribe_) policyCommentUnsubscribe_();
+  renderPolicyComments_([], true);
+  policyCommentUnsubscribe_ = fbListen_(
+    "public/policyComments/" + permalink,
+    (value) => renderPolicyComments_(fbObjectToArray_(value)),
+    (err) => {
+      document.getElementById("policyCommentList").innerHTML = `<p style="color:var(--danger,#c0392b); font-size:.88rem;">कमेन्ट लोड गर्न सकिएन। इन्टरनेट जाँच गरेर फेरि प्रयास गर्नुहोस्।</p>`;
+    }
+  );
+}
+async function submitPolicyComment(permalink){
+  const name = document.getElementById("policyCommentName").value.trim();
+  const email = document.getElementById("policyCommentEmail").value.trim();
+  const text = document.getElementById("policyCommentText").value.trim();
+  if(!name || !text){ toast("कृपया नाम र कमेन्ट दुवै लेख्नुहोस्।"); return; }
+
+  const comment = { policyId:permalink, name, email, comment:text, createdAt:new Date().toISOString() };
+  const remote = await apiCall("addPolicyComment", comment);
+  if(!remote || !remote.ok){
+    toast("कमेन्ट पठाउन सकिएन। पछि फेरि प्रयास गर्नुहोस्।");
+    return;
+  }
+  document.getElementById("policyCommentName").value = "";
+  document.getElementById("policyCommentEmail").value = "";
+  document.getElementById("policyCommentText").value = "";
+  toast("कमेन्ट पोस्ट भयो, धन्यवाद!");
+}
+
 function setDateMode(fieldId, mode, btnEl){
   const input = document.getElementById(fieldId);
   const tabs = btnEl.closest(".date-toggle-tabs");
@@ -2696,6 +2914,28 @@ function renderSiteStats(){
 // बाट (Apps Script हुँदै नगई) लोड हुन्छन्, त्यसैले पेज छिटो देखिन्छ। यहाँ कुनै
 // नक्कली/डेमो डेटा राखिएको छैन — FIREBASE_CONFIG नजोडिएसम्म सम्बन्धित सेक्सन खाली
 // नै देखिन्छ।
+// Fallback path for PolicyInfo: only used when the direct Firebase read above
+// fails or comes back empty (most commonly because Firebase Rules have not
+// been updated to allow direct reads of "/policyInfo" yet). This goes
+// through the Apps Script Web App instead, which authenticates to Firebase
+// with FIREBASE_SECRET and is therefore unaffected by client-side Rules --
+// slower (Apps Script cold-start) but guarantees the "पूरा जानकारी" buttons
+// on the Plans cards keep working even before the Rules are updated.
+async function loadPolicyInfoViaAppsScript_(){
+  if(!CONFIG.APPS_SCRIPT_URL) return;
+  try{
+    const res = await apiCall("getPolicyInfo", {});
+    if(res && res.ok && Array.isArray(res.items) && res.items.length){
+      POLICYINFO = res.items;
+      renderPlans();
+      const rawPolicy = location.hash.replace(/^#/, "");
+      if(rawPolicy.startsWith("policy/")) handleRoute();
+    }
+  } catch(err){
+    console.warn("[apiCall] getPolicyInfo fallback failed:", err);
+  }
+}
+
 async function initializeData(){
   // नोट (सुरक्षा): ग्राहक/प्रोस्पेक्ट/टार्गेट जस्ता संवेदनशील डेटा यहाँ (पेज लोड हुनेबित्तिकै) कहिल्यै
   // fetch गरिँदैन — ती केवल सफल Agent login पछि loadAdminData() मार्फत मात्र ल्याइन्छ।
@@ -2707,10 +2947,11 @@ async function initializeData(){
   if(!CONFIG.FIREBASE_CONFIG || !CONFIG.FIREBASE_CONFIG.databaseURL) return;
 
   try{
-    const [remotePolicyholders, remoteAgents, remoteBlogs, remoteStats] = await Promise.all([
+    const [remotePolicyholders, remoteAgents, remoteBlogs, remotePolicyInfo, remoteStats] = await Promise.all([
       fbReadOnce_("public/recentPolicyholders"),
       fbReadOnce_("downlineAgents"),
       fbReadOnce_("blogs"),
+      fbReadOnce_("policyInfo"),
       fbReadOnce_("public/stats"),
     ]);
 
@@ -2741,6 +2982,31 @@ async function initializeData(){
       console.warn("[Firebase] blogs:", remoteBlogs.error);
     }
 
+    if(remotePolicyInfo.ok && remotePolicyInfo.value){
+      const list = fbObjectToArray_(remotePolicyInfo.value);
+      if(list.length){
+        POLICYINFO = list;
+        renderPlans(); // PLANS कार्डका "पूरा जानकारी" लिंकहरू, अब मिल्ने PolicyInfo भेटिएपछि, प्रत्यक्ष पेजमा अपडेट हुन्छन्।
+        // शेयर लिंकबाट सिधै आउँदा (जस्तै Facebook/WhatsApp मार्फत), त्यो पोलिसी पेज
+        // भर्खरै लोड भएको हुन सक्छ — त्यसैले फेरि एकपटक routing जाँच्नुहोस्।
+        const rawPolicy = location.hash.replace(/^#/, "");
+        if(rawPolicy.startsWith("policy/")) handleRoute();
+      } else {
+        // Firebase पढ्न सफल भयो तर /policyInfo खाली फर्कियो -- सामान्यतया यसको मतलब
+        // PolicyInfo अझै Firebase मा import नै भएको छैन (runOnce_importFromSheets
+        // चलाउनु पर्छ) भन्ने हो, नत्र तलको Apps Script fallback ले नै डेटा ल्याउँछ।
+        loadPolicyInfoViaAppsScript_();
+      }
+    } else {
+      // सिधा Firebase read असफल भयो -- सबभन्दा सम्भावित कारण: Firebase Rules मा
+      // "/policyInfo" अझै सार्वजनिक-पढ्न योग्य (.read: true) बनाइएको छैन (हेर्नुहोस्
+      // README स्टेप ११ -- "/blogs" जस्तै "/policyInfo" पनि खोल्नुपर्छ)। त्यो नखोलिएसम्म
+      // पनि "पूरा जानकारी" बटन नटुटोस् भनेर, Apps Script मार्फत (जसले FIREBASE_SECRET
+      // प्रयोग गर्छ, Rules ले रोक्दैन) यही डेटा ब्याकअपको रूपमा तान्छौं।
+      console.warn("[Firebase] policyInfo:", remotePolicyInfo.error);
+      loadPolicyInfoViaAppsScript_();
+    }
+
     // सक्रिय पोलिसीधारक र यो महिना नविकरण — यी दुई अंक मात्र लगइन बिना नै स्वतः गणना हुन्छन्,
     // पूरा ग्राहक सूची कहिल्यै यहाँ आउँदैन (माथिकै सुरक्षा नीति कायम राखेर)।
     if(remoteStats.ok && remoteStats.value){
@@ -2753,6 +3019,12 @@ async function initializeData(){
     renderNetworkSliders();
     flashUpdatedStats();
     if(session.role === "admin") renderAdminAll();
+
+    // "पूरा जानकारी" बटन सही ठाउँमा नपुगेको गुनासो आउँदा प्रत्यक्ष जवाफ दिन, यो पेज
+    // लोड हुनेबित्तिकै डेभलपर कन्सोल (F12) मा स्वतः एउटा debug रिपोर्ट देखाउँछ। कुनै
+    // PolicyInfo रेकर्ड लोड भएकै छैन भने वा कुनै Plan नाम नमिलेको भए त्यहीँ देखिन्छ।
+    // (Apps Script fallback को नतिजा आउन केही सेकेन्ड लाग्न सक्ने भएकाले सानो ढिलाइ राखिएको हो।)
+    setTimeout(debugPolicyInfoMatching, 2500);
   } catch(err){
     console.error("initializeData failed:", err);
   }
@@ -2907,7 +3179,7 @@ async function testBackendConnection(){
     return;
   }
 
-  const actionsToTest = ["getRecentPolicyholders","getDownlineAgents","getBlogs"];
+  const actionsToTest = ["getRecentPolicyholders","getDownlineAgents","getBlogs","getPolicyInfo"];
 
   const results = await Promise.all(actionsToTest.map(async action=>{
     const startedAt = performance.now();
@@ -2951,11 +3223,16 @@ function renderOverview(){
 
   const totalPremium = customers.reduce((s,c)=>s+(Number(c.premium)||0),0);
 
-  // "यो महिना" भन्ने जुनसुकै आँकडा (मासिक प्रिमियम संकलन, कमिसन) सबै यहीं एकपटक
-  // गणना गरिएको thisMonthLogs बाट आउँछ — वास्तविक "भुक्तान भयो" लग गरिएका
-  // प्रविष्टिहरू, अनुमानित/स्थिर भाग (जस्तै कुल/१२) होइन।
-  const thisMonthLogs = commissionLog.filter(l=>isDateInMonth_(l.date, today.getFullYear(), today.getMonth()));
-  const monthlyPremiumCollected = thisMonthLogs.reduce((s,l)=>s+(Number(l.premium)||0),0);
+  // "यो महिना" भन्ने जुनसुकै आँकडा (मासिक प्रिमियम संकलन, कमिसन) अब customers array
+  // बाटै लाइभ निकालिन्छ — जुन ग्राहकको lastPaidDate यही महिनाभित्र पर्छ र
+  // paidPremiumCount >= 1 छ, तिनैलाई गन्ती गरिन्छ। कुनै छुट्टै "भुक्तान भयो" क्लिक
+  // वा लग-प्रविष्टि चाहिँदैन — Sheet मा सिधै संख्या/मिति भरे पनि यहीँ देखिन्छ।
+  const thisMonthPaid = customers.filter(c =>
+    (Number(c.paidPremiumCount)||0) >= 1 &&
+    isDateInMonth_(c.lastPaidDate, today.getFullYear(), today.getMonth())
+  );
+  const thisMonthCommissions = thisMonthPaid.map(c => ({ c, r: computeEarnedCommission_(c) })).filter(x => x.r.matched);
+  const monthlyPremiumCollected = thisMonthPaid.reduce((s,c)=>s+(Number(c.premium)||0),0);
 
   const clubPct = Math.min(100, Math.round((totalPremium/targets.club)*100));
   document.getElementById("ovClubPct").textContent = clubPct + "%";
@@ -2971,9 +3248,9 @@ function renderOverview(){
   document.getElementById("ovYearlyBar").style.width = yearlyPct + "%";
   document.getElementById("ovYearlyNote").textContent = `लक्ष्य रु. ${targets.yearly.toLocaleString("en-IN")} को ${yearlyPct}%`;
 
-  /* ---- यो महिना कमिसन — वास्तविक भुक्तान लग (commissionLog) बाट, समूहगत ---- */
-  const grossTotal = thisMonthLogs.reduce((s,l)=>s+(Number(l.gross)||0),0);
-  const tdsTotal = thisMonthLogs.reduce((s,l)=>s+(Number(l.tds)||0),0);
+  /* ---- यो महिना कमिसन — customers बाट लाइभ हिसाब गरिएको (thisMonthCommissions), समूहगत ---- */
+  const grossTotal = thisMonthCommissions.reduce((s,x)=>s+(Number(x.r.gross)||0),0);
+  const tdsTotal = thisMonthCommissions.reduce((s,x)=>s+(Number(x.r.tds)||0),0);
   const netTotal = grossTotal - tdsTotal;
 
   document.getElementById("ovCommission").textContent = fmtMoney(netTotal);
@@ -2982,14 +3259,14 @@ function renderOverview(){
 
   // योजना प्रकार अनुसार समूहगत ब्रेकडाउन
   const groups = {};
-  thisMonthLogs.forEach(l=>{
-    const key = l.category || "अन्य";
+  thisMonthCommissions.forEach(({r})=>{
+    const key = r.category || "अन्य";
     if(!groups[key]) groups[key] = { count:0, premium:0, gross:0, tds:0, net:0 };
     groups[key].count++;
-    groups[key].premium += Number(l.premium)||0;
-    groups[key].gross += Number(l.gross)||0;
-    groups[key].tds += Number(l.tds)||0;
-    groups[key].net += Number(l.net)||0;
+    groups[key].premium += Number(r.premium)||0;
+    groups[key].gross += Number(r.gross)||0;
+    groups[key].tds += Number(r.tds)||0;
+    groups[key].net += Number(r.net)||0;
   });
   const breakdownEl = document.getElementById("ovCommissionBreakdown");
   if(breakdownEl){
@@ -2997,7 +3274,7 @@ function renderOverview(){
       const g = groups[cat];
       return `<tr><td>${cat}</td><td class="mono">${g.count}</td><td class="mono">${fmtMoney(g.premium)}</td><td class="mono">${fmtMoney(g.gross)}</td><td class="mono">${fmtMoney(g.tds)}</td><td class="mono"><b>${fmtMoney(g.net)}</b></td></tr>`;
     }).join("");
-    breakdownEl.innerHTML = rows || `<tr><td colspan="6"><div class="empty-state"><div class="glyph"><i class="fa-solid fa-calculator"></i></div>यो महिना अझै कुनै भुक्तान लग गरिएको छैन।</div></td></tr>`;
+    breakdownEl.innerHTML = rows || `<tr><td colspan="6"><div class="empty-state"><div class="glyph"><i class="fa-solid fa-calculator"></i></div>यो महिना अझै कुनै भुक्तान रेकर्ड गरिएको छैन।</div></td></tr>`;
   }
 
   // ड्यु भएका तर अझै "भुक्तान भयो" चिन्ह नलागेका ग्राहकको सम्झना (यिनको कमिसन माथिको जोडमा छैन)
@@ -3007,7 +3284,7 @@ function renderOverview(){
     if(duePending.length){
       warnBox.classList.remove("hidden");
       warnBox.querySelector("span").textContent =
-        `${duePending.length} ग्राहकको नविकरण ड्यु छ तर यो महिनाको भुक्तान अझै लग गरिएको छैन (माथिको कमिसन जोडमा समावेश छैन): ${duePending.map(c=>c.name).join(", ")}। भुक्तान संकलन गरेपछि ग्राहक तालिकामा "भुक्तान भयो" थिच्नुहोस्।`;
+        `${duePending.length} ग्राहकको नविकरण ड्यु छ तर यो महिनाको भुक्तान अझै रेकर्ड गरिएको छैन (माथिको कमिसन जोडमा समावेश छैन): ${duePending.map(c=>c.name).join(", ")}। भुक्तान संकलन गरेपछि ग्राहक तालिकामा "भुक्तान भयो" थिच्नुहोस्, वा Sheet मा तिरिसकेको प्रिमियम संख्या/अन्तिम भुक्तान मिति सिधै अपडेट गर्नुहोस्।`;
     } else {
       warnBox.classList.add("hidden");
     }
@@ -3207,7 +3484,7 @@ initPublicStats();
 renderSiteStats();
 renderNetworkSliders();
 restoreSession(); // localStorage मा लगइन भए session/nav UI पुनर्स्थापित गर्छ (पेज भने बदल्दैन)
-handleRoute();     // हालको URL (#home/#login/#member/#admin/#blog/id) अनुसार सही पेज देखाउँछ
+handleRoute();     // हालको URL (#home/#login/#member/#admin/#blog/id/#policy/permalink) अनुसार सही पेज देखाउँछ
 initializeData(); // Firebase जोडिएको भए (public read data) माथिका placeholder स्वतः अपडेट गर्छ
 
 // Hero dial animated demo
