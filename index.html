@@ -867,7 +867,7 @@ tr:hover td{background:var(--cream);}
     </div>
   </div>
   <div class="wrap footer-affiliation">
-    <img src="https://login.citizenlifenepal.com/logo.png" alt="Citizen Life Insurance Company Limited — आधिकारिक लोगो" class="footer-affiliation-logo">
+    <img src="https://login.citizenlifenepal.com/img/logo.png" alt="Citizen Life Insurance Company Limited — आधिकारिक लोगो" class="footer-affiliation-logo">
     <div class="footer-affiliation-divider"></div>
     <img src="https://citizenlifenepal.com/wp-content/uploads/2026/04/citizen_iso-scaled.jpeg" alt="Citizen Life Insurance — ISO 9001:2015 प्रमाणपत्र" class="footer-affiliation-iso">
     <p class="footer-affiliation-note">यी लोगो/प्रमाणपत्र Citizen Life Insurance Company Limited को स्वामित्वमा रहेका हुन् र यहाँ कम्पनीसँगको आधिकारिक Affiliation (एजेन्ट ID: 40600496) देखाउने प्रयोजनका लागि मात्र प्रयोग गरिएको हो।</p>
@@ -1267,16 +1267,40 @@ tr:hover td{background:var(--cream);}
   </div>
 </div>
 
+<!-- Firebase Web SDK (compat build — यसले परिवर्तन नगरी बाँकी सबै <script> लाई
+     पुरानै <script> (module होइन) शैलीमा राख्न दिन्छ)। यी दुई मात्र चाहिन्छ:
+     "app" (जोड्न) र "database" (Realtime Database पढ्न/सुन्न)। -->
+<script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-database-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-analytics-compat.js"></script>
+
 <script>
 /* ============================================================
    CONFIG — एजेन्टले यहाँ आफ्नो जानकारी भर्नुहोस्
    ============================================================ */
 const CONFIG = {
-  // Google Apps Script Web App URL (Sheet-backed API). खाली भएसम्म DEMO DATA प्रयोग हुन्छ।
+  // Google Apps Script Web App URL (Sheet-backed API). अब यो केवल लगइन र Admin
+  // Panel का लेखन (add/update/delete) कार्यहरूका लागि मात्र प्रयोग हुन्छ — होमपेजको
+  // सामान्य पढ्ने (read) कार्यहरू तल्लो FIREBASE_CONFIG मार्फत सिधै Firebase बाट आउँछन्।
   APPS_SCRIPT_URL: "https://script.google.com/macros/s/AKfycbzAw_pDGFF9AOexVt0hT063E12cyMCf5ejQMm1YzqikB0tFdVS6P-qn9K1HksDeROlDwA/exec",
 
-  // Firebase (ऐच्छिक — auth/realtime थप्न चाहनुभयो भने)
-  FIREBASE_CONFIG: null, // { apiKey:"...", authDomain:"...", projectId:"...", ... }
+  // Firebase — होमपेजको public data (ब्लग, नेटवर्क सूची, हालैका पोलिसीधारक, stats,
+  // ब्लग कमेन्ट) सिधै यहाँबाट (Apps Script बिना) पढिन्छ, ताकि हरेक भिजिटरको पेज लोडमा
+  // ३-५ सेकेन्डको ढिलाइ नहोस्। यी सबै मान Firebase Console -> Project settings ->
+  // General -> "Your apps" -> Web app बाट पाइन्छ। apiKey सार्वजनिक रूपमा देखिनु
+  // सामान्य र सुरक्षित हो (Firebase वेब SDK सधैं यसरी नै काम गर्छ) — वास्तविक सुरक्षा
+  // Firebase Realtime Database Rules (FIREBASE_RULES.json हेर्नुहोस्) ले हुन्छ, यो key
+  // लुकाएर होइन। कहिल्यै संवेदनशील डेटा (ग्राहक/एजेन्ट/जन्ममिति) यहाँबाट पढिँदैन।
+  FIREBASE_CONFIG: {
+    apiKey: "AIzaSyC5WCTzPEVyEHR3E7jUo9mtvgxXDZY9bOE",
+    authDomain: "citizen-insurance-agent.firebaseapp.com",
+    databaseURL: "https://citizen-insurance-agent-default-rtdb.asia-southeast1.firebasedatabase.app",
+    projectId: "citizen-insurance-agent",
+    storageBucket: "citizen-insurance-agent.firebasestorage.app",
+    messagingSenderId: "749278885514",
+    appId: "1:749278885514:web:03b3fd3bee9856b79bdf73",
+    measurementId: "G-DKCLTEGF2N",
+  },
 
   AGENT: {
     fullName: "उम बहादुर गुरुङ",
@@ -1430,6 +1454,87 @@ async function apiCall(action, payload, timeoutMs){
   }
 }
 // उदाहरण प्रयोग: apiCall("addCustomer", {...}) — आफ्नो Apps Script doPost() मा action/payload अनुसारह्यान्डल गर्नुहोस्।
+
+/* ============================================================
+   FIREBASE — सिधै (Apps Script बिना) पढ्ने layer
+   ============================================================
+   नोट (सुरक्षा — यो नबदल्नुहोस्): यहाँबाट कहिल्यै "/customers", "/agents",
+   "/prospects", "/targets", वा "/leads" पढ्न प्रयास नगर्नुहोस् — Firebase Rules
+   ले त्यसलाई जसरी पनि रोक्छ (हेर्नुहोस् FIREBASE_RULES.json), किनभने ती नोडमा
+   जन्ममिति (login password) र ग्राहकको निजी विवरण (फोन/ठेगाना/परिचयपत्र) छन्।
+   केवल "/public/...", "/blogs", र "/downlineAgents" — यी तीन ठाउँ मात्र
+   ब्राउजरबाट पढ्न मिल्ने गरी Rules मा खुला राखिएको छ। लगइन, admin panel, र
+   कुनै पनि लेखन (write) कार्य सधैं जस्तै अघि नै apiCall() (Apps Script) मार्फत
+   हुन्छ — त्यो यहाँ परिवर्तन गरिएको छैन।
+   ============================================================ */
+let fbApp = null, fbDb = null;
+function initFirebase(){
+  if(fbDb) return fbDb; // पहिले नै initialize भइसकेको छ
+  if(!CONFIG.FIREBASE_CONFIG || !CONFIG.FIREBASE_CONFIG.databaseURL || typeof firebase === "undefined"){
+    console.warn("[Firebase] CONFIG.FIREBASE_CONFIG सेट गरिएको छैन वा SDK लोड भएन — public data पढ्न सकिँदैन।");
+    return null;
+  }
+  try{
+    fbApp = firebase.initializeApp(CONFIG.FIREBASE_CONFIG);
+    fbDb = firebase.database();
+    // Analytics ऐच्छिक हो — SDK लोड नभए वा ब्राउजरले ब्लक गरे (जस्तै privacy
+    // extension) पनि बाँकी site (Firebase database) सामान्य रूपमै चल्नुपर्छ,
+    // त्यसैले यसलाई छुट्टै try/catch मा राखिएको छ।
+    try{
+      if(CONFIG.FIREBASE_CONFIG.measurementId && firebase.analytics){
+        firebase.analytics();
+      }
+    }catch(analyticsErr){
+      console.warn("[Firebase] Analytics सुरु हुन सकेन (site भने सामान्य चल्छ):", analyticsErr);
+    }
+    return fbDb;
+  }catch(err){
+    console.error("[Firebase] initialize असफल भयो:", err);
+    return null;
+  }
+}
+
+// Firebase बाट "एकपटक" डेटा ल्याउने helper (होमपेज लोड हुनेबित्तिकै चाहिने डेटाका
+// लागि — जस्तै ब्लग, नेटवर्क सूची, stats)। .once("value") प्रयोग गरिएको छ ताकि
+// पेज खुलेको बेला ठ्याक्कै एकपटक मात्र fetch होस्, अनावश्यक धेरै पटक होइन।
+async function fbReadOnce_(path){
+  const db = initFirebase();
+  if(!db) return { ok:false, error:"Firebase जडान भएन।" };
+  try{
+    const snap = await db.ref(path).once("value");
+    return { ok:true, value: snap.val() };
+  }catch(err){
+    console.error(`[Firebase] "${path}" पढ्न असफल:`, err);
+    return { ok:false, error: err.message || "Firebase पढ्न सकिएन।" };
+  }
+}
+
+// Firebase बाट "लाइभ" (real-time) सुन्ने helper — जस्तै ब्लग कमेन्ट। कुनै एजेन्टले
+// अर्को ब्राउजर/मोबाइलबाट डेटा बदल्नेबित्तिकै, यो पेज पनि स्वतः अपडेट हुन्छ, पेज
+// रिफ्रेस नगरी नै। onError ले जडान/अनुमति त्रुटि भएमा UI मा देखाउन सकिन्छ।
+// फिर्ता भएको function लाई पछि सुनाइ बन्द (unsubscribe) गर्न बोलाउनुहोस्, नत्र
+// प्रयोगकर्ताले पेज नबदलेसम्म सुनाइ चलिरहन्छ (जस्तै अर्को ब्लग पोस्ट खोल्दा)।
+function fbListen_(path, onValue, onError){
+  const db = initFirebase();
+  if(!db){
+    if(onError) onError(new Error("Firebase जडान भएन।"));
+    return function(){};
+  }
+  const ref = db.ref(path);
+  const handler = ref.on("value",
+    (snap) => onValue(snap.val()),
+    (err) => { console.error(`[Firebase] "${path}" सुन्न असफल:`, err); if(onError) onError(err); }
+  );
+  return function unsubscribe(){ ref.off("value", handler); };
+}
+
+// Firebase को "{key1:{...}, key2:{...}}" object लाई array मा बदल्छ (Apps
+// Script को toArray_() जस्तै), किनभने बाँकी सबै render function ले array नै
+// अपेक्षा गर्छ।
+function fbObjectToArray_(obj){
+  if(!obj) return [];
+  return Object.keys(obj).map(key => Object.assign({ id: key }, obj[key]));
+}
 
 /* ============================================================
    NAVIGATION
@@ -2016,13 +2121,12 @@ function deleteContentItem(id){
   toast("मेटाइयो।");
 }
 
-let BLOGS = [
-  {id:"bl1", date:"असार २०८२", title:"पहिलो पटक बीमा लिँदा ध्यान दिनुपर्ने ५ कुरा", excerpt:"उमेर, आवश्यकता र बजेट अनुसार योजना छनोट गर्ने सरल तरिका।", featurePhoto:"", video:"", body:"<p>पहिलो पटक जीवन बीमा लिँदा धेरैलाई कहाँबाट सुरु गर्ने भन्ने अन्योल हुन्छ। यहाँ ध्यान दिनुपर्ने केही आधारभूत कुरा राखिएको छ।</p><h3>१. आफ्नो आवश्यकता पहिचान गर्नुहोस्</h3><p>परिवारको आर्थिक जिम्मेवारी, ऋण, र भविष्यको लक्ष्य हेरेर उपयुक्त सम एस्योर्ड छनोट गर्नुहोस्।</p><h3>२. उमेर र प्रिमियमको सम्बन्ध बुझ्नुहोस्</h3><p>जति चाँडो सुरु गर्नुहुन्छ, वार्षिक प्रिमियम त्यति नै कम पर्छ।</p><h3>३. योजना तुलना गर्नुहोस्</h3><p>Endowment, Money Back, र Term जस्ता विभिन्न योजनाको फरक बुझेर आफ्नो आवश्यकता अनुसार छनोट गर्नुहोस्।</p><p>थप जानकारीका लागि सिधै सम्पर्क गर्नुहोस्।</p>"},
-  {id:"bl2", date:"जेठ २०८२", title:"बीमा र बचतबीचको फरक बुझ्नुहोस्", excerpt:"धेरैले बीमालाई मात्र बचत ठान्छन् — वास्तविकता के हो, यहाँ हेरौं।", featurePhoto:"", video:"", body:"<p>धेरै मानिसले जीवन बीमालाई सामान्य बचत योजना जस्तै बुझ्छन्, तर यी दुई फरक अवधारणा हुन्।</p><h3>बचत भनेको के हो?</h3><p>बचतले तपाईंले जम्मा गरेको रकम मात्र फिर्ता दिन्छ, जोखिम कभर गर्दैन।</p><h3>बीमा भनेको के हो?</h3><p>बीमाले अनपेक्षित घटनाको जोखिम विरुद्ध सुरक्षा दिन्छ, साथसाथै दीर्घकालीन बचतको बाटो पनि खोल्छ।</p><p>त्यसैले बीमालाई केवल बचतको विकल्पको रूपमा नभई जोखिम व्यवस्थापनको औजारको रूपमा हेर्नु उपयुक्त हुन्छ।</p>"},
-  {id:"bl3", date:"वैशाख २०८२", title:"राइडर छनोट गर्दा नबिर्सनुहोस् यी कुरा", excerpt:"मुख्य पोलिसीसँगै कुन राइडरले बढी सुरक्षा दिन्छ भन्ने बुझौं।", featurePhoto:"", video:"", body:"<p>मुख्य बीमा पोलिसीसँगै थप्न सकिने राइडरले अतिरिक्त सुरक्षा दिन्छन्। यहाँ केही सामान्य राइडरको संक्षिप्त परिचय छ।</p><ul><li><b>ADB (Accidental Death Benefit)</b> — दुर्घटनाबाट मृत्यु भएमा थप भुक्तानी।</li><li><b>Critical Illness</b> — गम्भीर रोग पत्ता लागेमा एकमुष्ट रकम।</li><li><b>PTD/PPD</b> — अशक्तताको अवस्थामा आर्थिक संरक्षण।</li></ul><p>आफ्नो पेशा र जीवनशैली अनुसार उपयुक्त राइडर छनोट गर्नुहोस्।</p>"},
-];
+// ब्लग पोस्टहरू सिधै Firebase बाट (initializeData() मार्फत) लोड हुन्छन् — यहाँ
+// कुनै नमूना/डेमो पोस्ट राखिएको छैन। Firebase मा /blogs मा डेटा नहुन्जेल खाली
+// देखिन्छ (तल renderBlog() ले खाली-अवस्थाको सन्देश देखाउँछ)।
+let BLOGS = [];
 function renderBlog(){
-  document.getElementById("blogGrid").innerHTML = BLOGS.map(b=>`
+  document.getElementById("blogGrid").innerHTML = BLOGS.length ? BLOGS.map(b=>`
     <div class="blog-card" onclick="openBlogPost('${b.id}')">
       <div class="blog-thumb">${b.featurePhoto ? `<img src="${b.featurePhoto}" alt="${b.title}">` : `<i class="fa-solid fa-newspaper"></i>`}</div>
       <div class="blog-body">
@@ -2031,7 +2135,7 @@ function renderBlog(){
         <p>${b.excerpt}</p>
         <a href="javascript:void(0)" onclick="event.stopPropagation(); openBlogPost('${b.id}')">पूरा पढ्नुहोस् →</a>
       </div>
-    </div>`).join("");
+    </div>`).join("") : `<p style="color:var(--ink-soft); grid-column:1/-1; text-align:center;">हाल कुनै ब्लग पोस्ट छैन।</p>`;
 }
 
 // भिडियो URL हेरेर YouTube/Vimeo भए embed (iframe), अन्यथा सिधै फाइल (html5 <video>) हो भनी अनुमान गर्छ
@@ -2093,6 +2197,7 @@ function openBlogPost(id, push){
   loadComments(id);
 }
 function closeBlogPost(push){
+  if(commentUnsubscribe_){ commentUnsubscribe_(); commentUnsubscribe_ = null; }
   document.getElementById("blogPostView").classList.add("hidden");
   document.getElementById("mainSections").classList.remove("hidden");
   if(push !== false) navigateTo("home");
@@ -2118,9 +2223,15 @@ function commentTimeAgo_(iso){
   if(hours < 24) return hours + " घण्टा अगाडि";
   return Math.floor(hours/24) + " दिन अगाडि";
 }
-function renderComments_(list){
-  document.getElementById("commentCount").textContent = list.length;
-  document.getElementById("commentList").innerHTML = list.length ? list.map(c=>`
+let commentUnsubscribe_ = null;
+function renderComments_(list, loading){
+  if(loading){
+    document.getElementById("commentList").innerHTML = `<p style="color:var(--ink-soft); font-size:.88rem;"><i class="fa-solid fa-spinner fa-spin"></i> कमेन्टहरू लोड हुँदैछ...</p>`;
+    return;
+  }
+  const sorted = list.slice().sort((a,b)=> new Date(b.createdAt||0) - new Date(a.createdAt||0));
+  document.getElementById("commentCount").textContent = sorted.length;
+  document.getElementById("commentList").innerHTML = sorted.length ? sorted.map(c=>`
     <div class="comment-item">
       <div class="comment-avatar">${(c.name||"?").trim().charAt(0).toUpperCase()}</div>
       <div class="comment-body">
@@ -2129,13 +2240,18 @@ function renderComments_(list){
       </div>
     </div>`).join("") : `<p style="color:var(--ink-soft); font-size:.88rem;">अहिलेसम्म कुनै कमेन्ट छैन — पहिलो कमेन्ट तपाईंको होस्!</p>`;
 }
-async function loadComments(blogId){
-  const remote = await apiCall("getComments", {blogId});
-  if(remote && remote.ok && Array.isArray(remote.items)){
-    renderComments_(remote.items);
-  } else {
-    renderComments_([]);
-  }
+function loadComments(blogId){
+  // अघिल्लो ब्लग पोस्टको listener चलिरहेको भए पहिले बन्द गर्नुहोस्, नत्र दुईवटा
+  // ब्लग एकैसाथ सुनिरहन्छन्।
+  if(commentUnsubscribe_) commentUnsubscribe_();
+  renderComments_([], true); // लोडिंग देखाउनुहोस्
+  commentUnsubscribe_ = fbListen_(
+    "public/blogComments/" + blogId,
+    (value) => renderComments_(fbObjectToArray_(value)),
+    (err) => {
+      document.getElementById("commentList").innerHTML = `<p style="color:var(--danger,#c0392b); font-size:.88rem;">कमेन्ट लोड गर्न सकिएन। इन्टरनेट जाँच गरेर फेरि प्रयास गर्नुहोस्।</p>`;
+    }
+  );
 }
 async function submitComment(blogId){
   const name = document.getElementById("commentName").value.trim();
@@ -2144,6 +2260,9 @@ async function submitComment(blogId){
   if(!name || !text){ toast("कृपया नाम र कमेन्ट दुवै लेख्नुहोस्।"); return; }
 
   const comment = { blogId, name, email, comment:text, createdAt:new Date().toISOString() };
+  // कमेन्ट लेख्ने (write) काम अझै Apps Script मार्फत नै हुन्छ — यसले Sheet मा पनि
+  // जोगाइराख्छ र स्प्याम जाँच गर्न सक्छ। पढ्ने (सूचीमा देखिने) काम मात्र माथिको
+  // fbListen_() ले real-time गर्छ, त्यसैले यो सफल भएपछि केही सेकेन्डमै आफैं देखिन्छ।
   const remote = await apiCall("addComment", comment);
   if(!remote || !remote.ok){
     toast("कमेन्ट पठाउन सकिएन। पछि फेरि प्रयास गर्नुहोस्।");
@@ -2153,7 +2272,6 @@ async function submitComment(blogId){
   document.getElementById("commentEmail").value = "";
   document.getElementById("commentText").value = "";
   toast("कमेन्ट पोस्ट भयो, धन्यवाद!");
-  loadComments(blogId);
 }
 
 function setDateMode(fieldId, mode, btnEl){
@@ -2278,7 +2396,8 @@ function setNetworkTab(kind, btnEl){
 }
 
 function initPublicStats(){
-  // यो स्थिर (static) डेमो customers array बाटै गणना हुन्छ — कुनै database query जाँदैन।
+  // Firebase बाट /public/stats आइसकेपछि SITE_STATS मा भरिन्छ; नआउँदासम्म 0 देखिन्छ
+  // (कुनै नक्कली/डेमो अंक राखिएको छैन)।
   const custCount = (SITE_STATS.activeCustomerCount != null) ? SITE_STATS.activeCustomerCount : customers.length;
   const dueCount = (SITE_STATS.dueThisMonthCount != null) ? SITE_STATS.dueThisMonthCount
     : customers.filter(c=>daysUntil(c.renewDate) <= 30 && daysUntil(c.renewDate) >= -15).length;
@@ -2293,9 +2412,10 @@ function renderSiteStats(){
   document.getElementById("heroExperience").textContent = SITE_STATS.experienceSinceLabel;
 }
 
-// Apps Script जोडिएपछि customers/prospects/targets (Agent login पछि मात्र) र ग्राहक/एजेन्ट
-// सूची + ब्लग (सधैं) backend बाट स्वतः लोड हुन्छ। नजोडिएसम्म apiCall() ले null फर्काउँछ र
-// माथिको DEMO DATA नै प्रयोग भइरहन्छ।
+// ब्लग, नेटवर्क सूची (एजेन्ट/पोलिसीधारक), र होमपेजका stats — यी सबै अब सिधै Firebase
+// बाट (Apps Script हुँदै नगई) लोड हुन्छन्, त्यसैले पेज छिटो देखिन्छ। यहाँ कुनै
+// नक्कली/डेमो डेटा राखिएको छैन — FIREBASE_CONFIG नजोडिएसम्म सम्बन्धित सेक्सन खाली
+// नै देखिन्छ।
 async function initializeData(){
   // नोट (सुरक्षा): ग्राहक/प्रोस्पेक्ट/टार्गेट जस्ता संवेदनशील डेटा यहाँ (पेज लोड हुनेबित्तिकै) कहिल्यै
   // fetch गरिँदैन — ती केवल सफल Agent login पछि loadAdminData() मार्फत मात्र ल्याइन्छ।
@@ -2304,33 +2424,49 @@ async function initializeData(){
   // ग्राहक/नविकरण अंक (aggregate मात्र, पूरा सूची होइन) मात्र Firebase सँग लाइभ जोडिएको छ। योजना, राइडर, FAQs, भिडियो, अडियो, बोनस दर, Hero/सम्पर्क जानकारी जस्ता सेल्स/मार्केटिङ
   // कन्टेन्ट स्थिर (static, माथिकै JS array/const मा) राखिएको छ — त्यसैले हरेक visitor को पेज लोडमा
   // अनावश्यक database query जाँदैन। यी परिवर्तन गर्न फाइलभित्रैको सम्बन्धित array सिधै सम्पादन गर्नुहोस्।
-  if(!CONFIG.APPS_SCRIPT_URL) return; // backend नजोडिएसम्म demo data नै देखाइराख्ने, केही थप नगर्ने
+  if(!CONFIG.FIREBASE_CONFIG || !CONFIG.FIREBASE_CONFIG.databaseURL) return;
+
   try{
     const [remotePolicyholders, remoteAgents, remoteBlogs, remoteStats] = await Promise.all([
-      apiCall("getRecentPolicyholders"),
-      apiCall("getDownlineAgents"),
-      apiCall("getBlogs"),
-      apiCall("getPublicStats"),
+      fbReadOnce_("public/recentPolicyholders"),
+      fbReadOnce_("downlineAgents"),
+      fbReadOnce_("blogs"),
+      fbReadOnce_("public/stats"),
     ]);
 
-    if(remotePolicyholders && remotePolicyholders.ok && Array.isArray(remotePolicyholders.items) && remotePolicyholders.items.length){
-      recentPolicyholders = remotePolicyholders.items;
+    if(remotePolicyholders.ok && Array.isArray(remotePolicyholders.value) && remotePolicyholders.value.length){
+      recentPolicyholders = remotePolicyholders.value;
+    } else if(!remotePolicyholders.ok){
+      console.warn("[Firebase] recentPolicyholders:", remotePolicyholders.error);
     }
-    if(remoteAgents && remoteAgents.ok && Array.isArray(remoteAgents.items) && remoteAgents.items.length){
-      downlineAgents = remoteAgents.items;
+
+    if(remoteAgents.ok && remoteAgents.value){
+      const list = fbObjectToArray_(remoteAgents.value);
+      if(list.length) downlineAgents = list;
+    } else if(!remoteAgents.ok){
+      console.warn("[Firebase] downlineAgents:", remoteAgents.error);
     }
-    if(remoteBlogs && remoteBlogs.ok && Array.isArray(remoteBlogs.items) && remoteBlogs.items.length){
-      BLOGS = remoteBlogs.items;
-      renderBlog();
-      // Shared blog लिंक (जस्तै Facebook/WhatsApp बाट) मार्फत सिधै आउँदा, त्यो पोस्ट backend
-      // बाट भर्खरै लोड भएको हुन सक्छ — त्यसैले फेरि एकपटक routing जाँच्नुहोस्।
-      const raw = location.hash.replace(/^#/, "");
-      if(raw.startsWith("blog/")) handleRoute();
+
+    if(remoteBlogs.ok && remoteBlogs.value){
+      const list = fbObjectToArray_(remoteBlogs.value);
+      if(list.length){
+        BLOGS = list;
+        renderBlog();
+        // Shared blog लिंक (जस्तै Facebook/WhatsApp बाट) मार्फत सिधै आउँदा, त्यो पोस्ट
+        // भर्खरै लोड भएको हुन सक्छ — त्यसैले फेरि एकपटक routing जाँच्नुहोस्।
+        const raw = location.hash.replace(/^#/, "");
+        if(raw.startsWith("blog/")) handleRoute();
+      }
+    } else if(!remoteBlogs.ok){
+      console.warn("[Firebase] blogs:", remoteBlogs.error);
     }
+
     // सक्रिय पोलिसीधारक र यो महिना नविकरण — यी दुई अंक मात्र लगइन बिना नै स्वतः गणना हुन्छन्,
     // पूरा ग्राहक सूची कहिल्यै यहाँ आउँदैन (माथिकै सुरक्षा नीति कायम राखेर)।
-    if(remoteStats && remoteStats.ok && remoteStats.stats){
-      Object.assign(SITE_STATS, remoteStats.stats);
+    if(remoteStats.ok && remoteStats.value){
+      Object.assign(SITE_STATS, remoteStats.value);
+    } else if(!remoteStats.ok){
+      console.warn("[Firebase] stats:", remoteStats.error);
     }
 
     initPublicStats();
@@ -2738,7 +2874,7 @@ renderSiteStats();
 renderNetworkSliders();
 restoreSession(); // localStorage मा लगइन भए session/nav UI पुनर्स्थापित गर्छ (पेज भने बदल्दैन)
 handleRoute();     // हालको URL (#home/#login/#member/#admin/#blog/id) अनुसार सही पेज देखाउँछ
-initializeData(); // Apps Script जोडिएको भए backend data ले माथिका placeholder स्वतः अपडेट गर्छ
+initializeData(); // Firebase जोडिएको भए (public read data) माथिका placeholder स्वतः अपडेट गर्छ
 
 // Hero dial animated demo
 setDial("heroDialRing", null, 32, 90);
