@@ -394,23 +394,66 @@ footer.site .footer-social-row a:hover{background:var(--gold); color:#241804;}
 /* ============================================================
    APP SHELL (dashboards)
    ============================================================ */
-.app-shell{display:none; min-height:100vh; background:var(--cream);}
+.app-shell{display:none; min-height:100vh; background:var(--cream); flex-direction:column;}
 .app-shell.active{display:flex;}
-.app-side{width:230px; flex-shrink:0; background:var(--pine); color:var(--paper); padding:24px 16px; display:flex; flex-direction:column; gap:4px;}
-.app-side .brand{margin-bottom:24px; padding:0 6px;}
-.app-side .brand b, .app-side .brand span{color:var(--paper);}
-.app-side .brand span{opacity:.7;}
+
+/* माथिको सधैं-देखिने header — प्रोफाइल र सूचना (नोटिफिकेसन) दायाँ कुनामा,
+   मोबाइलमा मात्र देखिने hamburger बायाँमा (डेस्कटपमा साइडबार पहिल्यैजस्तै सधैं
+   देखिने भएकोले hamburger चाहिँदैन)। */
+.app-header{
+  display:flex; align-items:center; justify-content:space-between; gap:14px;
+  padding:12px 20px; background:var(--pine); position:sticky; top:0; z-index:40;
+}
+.app-header-left{display:flex; align-items:center; gap:10px;}
+.app-header-right{display:flex; align-items:center; gap:12px;}
+.app-header .brand{margin:0;}
+.app-header .brand b, .app-header .brand span{color:var(--paper);}
+.app-header .brand span{opacity:.72;}
+.header-icon-btn{
+  display:flex; align-items:center; justify-content:center;
+  background:rgba(255,253,248,.1); border:none; color:var(--paper);
+  width:38px; height:38px; border-radius:9px; font-size:1.05rem; flex-shrink:0; cursor:pointer;
+}
+.header-icon-btn:hover{background:rgba(255,253,248,.2);}
+.app-header .nav-burger{display:none; color:var(--paper); background:rgba(255,253,248,.1); width:38px; height:38px;}
+.app-header .nav-burger:hover{background:rgba(255,253,248,.2);}
+.notif-bell-wrap{position:relative; display:flex;}
+.notif-badge{position:absolute; top:-4px; right:-4px; background:var(--crimson); color:#fff; border-radius:999px; font-size:.6rem; padding:1px 5px; line-height:1.35; font-weight:700;}
+.app-profile-wrap{position:relative;}
+.profile-dropdown{
+  position:absolute; top:calc(100% + 10px); right:0; background:var(--paper); border-radius:12px;
+  box-shadow:0 14px 34px rgba(0,0,0,.2); padding:8px; min-width:190px; z-index:80;
+}
+.profile-dropdown.hidden{display:none;}
+.profile-dropdown-item{
+  display:flex; align-items:center; gap:10px; width:100%; text-align:left; padding:10px 12px;
+  border:none; background:none; border-radius:8px; font-size:.85rem; color:var(--ink); cursor:pointer;
+}
+.profile-dropdown-item:hover{background:var(--cream);}
+
+/* header मुनिको साइडबार+मुख्य-भाग row */
+.app-body{display:flex; flex:1; min-height:0; position:relative;}
+.app-side-overlay{display:none;}
+.app-side{width:230px; flex-shrink:0; background:var(--pine); color:var(--paper); padding:20px 16px; display:flex; flex-direction:column; gap:4px;}
 .side-link{display:flex; align-items:center; gap:10px; padding:11px 12px; border-radius:9px; text-decoration:none; color:#CBD8D3; font-size:.88rem; font-weight:500; border:none; background:none; text-align:left; width:100%;}
 .side-link:hover{background:rgba(255,253,248,.08); color:var(--paper);}
 .side-link.active{background:var(--gold); color:#241804; font-weight:700;}
-.side-foot{margin-top:auto; padding-top:14px; border-top:1px solid rgba(255,253,248,.15);}
 .app-main{flex:1; padding:28px 34px; overflow-x:hidden; max-width:calc(100% - 230px);}
 @media (max-width:820px){
-  .app-shell.active{flex-direction:column;}
-  .app-side{width:100%; flex-direction:row; flex-wrap:wrap; padding:14px;}
-  .app-side .brand{display:none;}
+  .app-header .nav-burger{display:flex;}
+  .app-body{display:block;}
+  .app-side-overlay{
+    display:block; position:fixed; inset:0; background:rgba(18,24,22,.5); z-index:65;
+    opacity:0; pointer-events:none; transition:opacity .25s ease;
+  }
+  .app-side-overlay.open{opacity:1; pointer-events:auto;}
+  .app-side{
+    position:fixed; top:0; left:0; bottom:0; width:min(78vw,300px); z-index:70;
+    transform:translateX(-100%); transition:transform .3s ease; box-shadow:10px 0 30px rgba(0,0,0,.25);
+    overflow-y:auto; padding-top:24px;
+  }
+  .app-side.open{transform:translateX(0);}
   .app-main{max-width:100%; padding:20px;}
-  .side-foot{margin-top:0;}
 }
 .app-topbar{display:flex; justify-content:space-between; align-items:center; margin-bottom:26px; flex-wrap:wrap; gap:14px;}
 .app-topbar h2{margin:0; font-size:1.5rem;}
@@ -876,7 +919,7 @@ tr:hover td{background:var(--cream);}
     </div>
   </div>
   <div class="wrap footer-affiliation">
-    <img src="https://storage.khadgakali.edu.np/insurance/photos/citizenlife-logo.png" alt="Citizen Life Insurance Company Limited — आधिकारिक लोगो" class="footer-affiliation-logo">
+    <img src="https://login.citizenlifenepal.com/img/logo.png" alt="Citizen Life Insurance Company Limited — आधिकारिक लोगो" class="footer-affiliation-logo">
     <div class="footer-affiliation-divider"></div>
     <img src="https://citizenlifenepal.com/wp-content/uploads/2026/04/citizen_iso-scaled.jpeg" alt="Citizen Life Insurance — ISO 9001:2015 प्रमाणपत्र" class="footer-affiliation-iso">
     <p class="footer-affiliation-note">यी लोगो/प्रमाणपत्र Citizen Life Insurance Company Limited को स्वामित्वमा रहेका हुन् र यहाँ कम्पनीसँगको आधिकारिक Affiliation (एजेन्ट ID: 40600496) देखाउने प्रयोजनका लागि मात्र प्रयोग गरिएको हो।</p>
@@ -962,15 +1005,36 @@ tr:hover td{background:var(--cream);}
      CUSTOMER (USER) DASHBOARD
      ============================================================ -->
 <div class="app-shell" id="view-user">
-  <aside class="app-side">
-    <div class="brand"><img src="https://i.postimg.cc/CKpT3qpx/Um-Bahadur-Gurung.png" alt="बिकास गुरुङ" class="brand-photo"><span class="brand-text"><b>ग्राहक प्यानल</b><span>बिकास गुरुङ</span></span></div>
-    <button class="side-link active"><i class="fa-solid fa-house"></i> ड्यासबोर्ड</button>
-    <button class="side-link" onclick="goHome()"><i class="fa-solid fa-home"></i> Homepage</button>
-    <button class="side-link" onclick="scrollToId('userRiders')"><i class="fa-solid fa-shield-halved"></i> राइडर कभर</button>
-    <button class="side-link" onclick="scrollToId('userSupport')"><i class="fa-solid fa-headset"></i> सहयोग</button>
-    <div class="side-foot"><button class="side-link" onclick="logout()"><i class="fa-solid fa-right-from-bracket"></i> लगआउट</button></div>
-  </aside>
-  <main class="app-main">
+  <div class="app-header">
+    <div class="app-header-left">
+      <button class="nav-burger" onclick="toggleAppSidebar()" aria-label="मेनु खोल्नुहोस्"><i class="fa-solid fa-bars"></i></button>
+      <div class="brand"><img src="https://i.postimg.cc/CKpT3qpx/Um-Bahadur-Gurung.png" alt="बिकास गुरुङ" class="brand-photo"><span class="brand-text"><b>ग्राहक प्यानल</b><span>बिकास गुरुङ</span></span></div>
+    </div>
+    <div class="app-header-right">
+      <div class="notif-bell-wrap">
+        <button class="header-icon-btn" onclick="openNotifModal()" aria-label="सूचना"><i class="fa-solid fa-bell"></i></button>
+        <span id="notifBadgeMember" class="hidden notif-badge">0</span>
+      </div>
+      <div class="app-profile-wrap">
+        <button class="nav-profile" onclick="toggleProfileMenu()">
+          <span class="nav-profile-avatar" id="memberProfileAvatar"><i class="fa-solid fa-user"></i></span>
+          <span class="nav-profile-name" id="memberProfileName">ग्राहक</span>
+        </button>
+        <div class="profile-dropdown hidden">
+          <button class="profile-dropdown-item" onclick="goHome()"><i class="fa-solid fa-house"></i> Homepage</button>
+          <button class="profile-dropdown-item" onclick="logout()"><i class="fa-solid fa-right-from-bracket"></i> लगआउट</button>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="app-body">
+    <div class="app-side-overlay" onclick="closeAppSidebar()"></div>
+    <aside class="app-side">
+      <button class="side-link active"><i class="fa-solid fa-house"></i> ड्यासबोर्ड</button>
+      <button class="side-link" onclick="scrollToId('userRiders')"><i class="fa-solid fa-shield-halved"></i> राइडर कभर</button>
+      <button class="side-link" onclick="scrollToId('userSupport')"><i class="fa-solid fa-headset"></i> सहयोग</button>
+    </aside>
+    <main class="app-main">
     <div class="app-topbar">
       <div style="display:flex; align-items:center; gap:14px;">
         <img id="userPhoto" src="" alt="" class="user-photo hidden">
@@ -978,6 +1042,7 @@ tr:hover td{background:var(--cream);}
       </div>
       <span class="tag ok" id="userStatusTag">सक्रिय पोलिसी</span>
     </div>
+
 
     <div class="grid-2" style="margin-bottom:22px; align-items:stretch;">
       <div class="panel" style="display:flex; gap:22px; align-items:center;">
@@ -1040,7 +1105,8 @@ tr:hover td{background:var(--cream);}
         <a class="btn ghost block" href="sms:+9779864891366"><i class="fa-solid fa-comment-sms"></i> SMS</a>
       </div>
     </div>
-  </main>
+    </main>
+  </div>
 </div>
 
 
@@ -1048,16 +1114,39 @@ tr:hover td{background:var(--cream);}
      ADMIN DASHBOARD
      ============================================================ -->
 <div class="app-shell" id="view-admin">
-  <aside class="app-side">
-    <div class="brand"><img src="https://i.postimg.cc/CKpT3qpx/Um-Bahadur-Gurung.png" alt="बिकास गुरुङ" class="brand-photo"><span class="brand-text"><b>Agent Panel</b><span>बिकास गुरुङ</span></span></div>
-    <button class="side-link" onclick="goHome()"><i class="fa-solid fa-home"></i> Homepage</button>
+  <div class="app-header">
+    <div class="app-header-left">
+      <button class="nav-burger" onclick="toggleAppSidebar()" aria-label="मेनु खोल्नुहोस्"><i class="fa-solid fa-bars"></i></button>
+      <div class="brand"><img src="https://i.postimg.cc/CKpT3qpx/Um-Bahadur-Gurung.png" alt="बिकास गुरुङ" class="brand-photo"><span class="brand-text"><b>Agent Panel</b><span>बिकास गुरुङ</span></span></div>
+    </div>
+    <div class="app-header-right">
+      <div class="notif-bell-wrap">
+        <button class="header-icon-btn" onclick="openNotifModal()" aria-label="सूचना"><i class="fa-solid fa-bell"></i></button>
+        <span id="notifBadgeAdmin" class="hidden notif-badge">0</span>
+      </div>
+      <div class="app-profile-wrap">
+        <button class="nav-profile" onclick="toggleProfileMenu()">
+          <span class="nav-profile-avatar"><img src="https://i.postimg.cc/CKpT3qpx/Um-Bahadur-Gurung.png" alt="बिकास गुरुङ"></span>
+          <span class="nav-profile-name">बिकास गुरुङ</span>
+        </button>
+        <div class="profile-dropdown hidden">
+          <button class="profile-dropdown-item" onclick="goHome()"><i class="fa-solid fa-house"></i> Homepage</button>
+          <button class="profile-dropdown-item" onclick="logout()"><i class="fa-solid fa-right-from-bracket"></i> लगआउट</button>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="app-body">
+    <div class="app-side-overlay" onclick="closeAppSidebar()"></div>
+    <aside class="app-side">
     <button class="side-link active" data-tab="overview" onclick="setAdminTab('overview')"><i class="fa-solid fa-chart-line"></i> ओभरभ्यू</button>
     <button class="side-link" data-tab="customers" onclick="setAdminTab('customers')"><i class="fa-solid fa-users"></i> ग्राहक</button>
     <button class="side-link" data-tab="renewals" onclick="setAdminTab('renewals')"><i class="fa-solid fa-clock"></i> नविकरण</button>
     <button class="side-link" data-tab="prospects" onclick="setAdminTab('prospects')"><i class="fa-solid fa-bullseye"></i> प्रोस्पेक्ट फलोअप</button>
     <button class="side-link" data-tab="targets" onclick="setAdminTab('targets')"><i class="fa-solid fa-trophy"></i> टार्गेट</button>
+    <button class="side-link" data-tab="agent-dashboard" onclick="setAdminTab('agent-dashboard')"><i class="fa-solid fa-id-badge"></i> एजेन्ट ड्यासबोर्ड</button>
+    <button class="side-link" data-tab="notifications" onclick="setAdminTab('notifications')"><i class="fa-solid fa-paper-plane"></i> सूचना पठाउनुहोस्</button>
     <button class="side-link" data-tab="content" onclick="setAdminTab('content')"><i class="fa-solid fa-layer-group"></i> थप सामग्री</button>
-    <div class="side-foot"><button class="side-link" onclick="logout()"><i class="fa-solid fa-right-from-bracket"></i> लगआउट</button></div>
   </aside>
   <main class="app-main">
 
@@ -1106,6 +1195,7 @@ tr:hover td{background:var(--cream);}
             <div id="ovSalaryCollected" class="mono" style="font-size:1.5rem; color:var(--pine); margin-top:2px;">रु. 0</div>
             <div class="bar" style="margin-top:8px;"><i id="ovSalaryBar" style="width:0%; background:var(--pine);"></i></div>
             <p style="font-size:.8rem; color:var(--ink-soft); margin-top:6px;" id="ovSalaryNote">—</p>
+            <p style="font-size:.72rem; color:var(--gold); margin-top:2px; font-style:italic;" id="ovSalaryDownlineNote"></p>
           </div>
 
           <div>
@@ -1197,6 +1287,90 @@ tr:hover td{background:var(--cream);}
       </div>
     </div>
 
+    <!-- AGENT DASHBOARD TAB -->
+    <div class="admin-tab hidden" id="tab-agent-dashboard">
+      <div class="app-topbar"><div><h2><i class="fa-solid fa-id-badge"></i> एजेन्ट ड्यासबोर्ड</h2><p>उपलब्धि अनुसार पाइने सुविधा, बोनस रेट, परीक्षा तयारी सामग्री, ब्रोसर/क्याटलग र मासिक स्किम — एकै ठाउँमा</p></div></div>
+
+      <div class="panel">
+        <div class="panel-head"><h3><i class="fa-solid fa-trophy"></i> Club तह अनुसार पाइने सुविधा (सन्दर्भ तालिका)</h3></div>
+        <p style="font-size:.78rem; color:var(--ink-soft); margin:-6px 0 12px;">कुन तह पुगेपछि कति सुविधा पाइन्छ भन्ने पूरा सूची — हालको प्रगति ओभरभ्यूको "Club Target" प्यानलमा हेर्न मिल्छ, यो केवल planning का लागि सन्दर्भ तालिका हो।</p>
+        <div class="table-scroll"><table>
+          <thead><tr><th>तह</th><th>चाहिने प्रिमियम</th><th>पाइने सुविधा</th></tr></thead>
+          <tbody id="agentDashboardClubTable"></tbody>
+        </table></div>
+      </div>
+
+      <div class="panel">
+        <div class="panel-head"><h3><i class="fa-solid fa-percent"></i> बोनस रेट</h3></div>
+        <p style="font-size:.78rem; color:var(--ink-soft); margin:-6px 0 12px;">यही दर Member Dashboard को "हालको बोनस दर" तालिकामा पनि देखिन्छ — Google Sheet को "BonusRates" ट्याबबाटै दुवैतिर आउँछ।</p>
+        <div class="table-scroll"><table>
+          <thead><tr><th>योजना</th><th>बोनस दर (प्रति हजार)</th></tr></thead>
+          <tbody id="agentDashboardBonusTable"></tbody>
+        </table></div>
+      </div>
+
+      <div class="panel">
+        <div class="panel-head"><h3><i class="fa-solid fa-chart-column"></i> डाउनलाइन एजेन्ट व्यवसाय — मासिक (पछिल्ला १२ महिना)</h3></div>
+        <p style="font-size:.78rem; color:var(--ink-soft); margin:-6px 0 12px;">Google Sheet को "Agent Business" ट्याबबाट (Agent Name/Month/Amount)। यो रकम Minimum Salary Target मा स्वतः थपिन्छ (Overview मा हेर्नुहोस्) — Club Target वा वार्षिक पोर्टफोलियोमा भने थपिँदैन।</p>
+        <div id="agentBusinessMonthlyChart" style="display:flex; align-items:flex-end; gap:6px; height:170px; margin-top:14px;"></div>
+      </div>
+
+      <div class="panel">
+        <div class="panel-head"><h3><i class="fa-solid fa-ranking-star"></i> उत्कृष्ट प्रदर्शन गर्ने एजेन्ट (पछिल्ला १२ महिना)</h3></div>
+        <div id="agentBusinessRanking" style="margin-top:10px; display:flex; flex-direction:column; gap:12px;"></div>
+      </div>
+
+      <div class="panel">
+        <div class="panel-head"><h3><i class="fa-solid fa-user-tag"></i> एजेन्टलाई सूचना</h3></div>
+        <p style="font-size:.78rem; color:var(--ink-soft); margin:-6px 0 12px;">Notification ट्याबबाट "एजेन्ट" audience छानेर पठाइएका सन्देश यहाँ देखिन्छन्। डाउनलाइन एजेन्टको छुट्टै लगइन नभएकोले, यो सूची तपाईं आफैंले हेरेर सम्बन्धित एजेन्टलाई फोन/WhatsApp मार्फत पुर्‍याउने काम-सूची (reminder list) हो — स्वतः तिनीहरूको फोन/इमेलमा जाँदैन।</p>
+        <div id="agentTargetedNotifList" style="display:flex; flex-direction:column; gap:10px;"></div>
+      </div>
+
+      <div id="agentDashboardResourceSections"></div>
+
+      <div class="panel">
+        <p style="font-size:.8rem; color:var(--ink-soft);">परीक्षा तयारी सामग्री, ब्रोसर/क्याटलग, मासिक स्किम जस्ता सामग्री Google Sheet का <b>दुई</b> ट्याबबाट व्यवस्थित हुन्छन् (दुवैको स्तम्भ संरचना उस्तै: Category/Title/Description/Value/Link/Body) — छोटो/लिंक-मात्र item हरू "AgentResources" ट्याबमा राख्नुहोस्, र लामो लेख/नोट (Body भरेर) "AgentArticles" ट्याबमा राख्नुहोस्; दुवैका item एउटै Category-अनुसार मिसिएर यहाँ देखिन्छन्। row हरूको संख्यामा कुनै हद (limit) छैन, जति चाहे उति थप्नुहोस्। Link मा बाहिरी फाइल/URL राख्नुहोस्; Body मा पूरा लेख/नोट नै सिधै लेखे (Blog पोस्टजस्तै) "पूरा लेख पढ्नुहोस्" बटनले यहीँ देखाउँछ — दुवै (Link र Body) एकैसाथ पनि भर्न मिल्छ। परिवर्तन केही मिनेटमै (वा edit गरेको बित्तिकै) यहाँ देखिन्छ। (बोनस रेट भने माथिकै छुट्टै "BonusRates" ट्याबबाट आउँछ।)</p>
+      </div>
+    </div>
+
+    <!-- NOTIFICATIONS TAB -->
+    <div class="admin-tab hidden" id="tab-notifications">
+      <div class="app-topbar"><div><h2><i class="fa-solid fa-paper-plane"></i> सूचना पठाउनुहोस्</h2><p>ग्राहकलाई पठाइएको सूचना उनको Member Dashboard को बेल आइकनमा देखिन्छ। एजेन्टलाई पठाइएको सूचना भने (डाउनलाइन एजेन्टको छुट्टै लगइन नभएकोले) यहीं तल र Agent Dashboard को "एजेन्टलाई सूचना" प्यानलमा — तपाईं आफैंले हेरेर सम्बन्धित एजेन्टलाई फोन/WhatsApp मार्फत पुर्‍याउनुहोस्।</p></div></div>
+
+      <div class="panel">
+        <div class="field" style="margin-bottom:14px;">
+          <label>कसलाई पठाउने?</label>
+          <select id="notifAudienceType" onchange="onNotifAudienceTypeChange_()">
+            <option value="policyholder-individual">एक जना ग्राहक (Individual Policyholder)</option>
+            <option value="policyholder-all">सबै ग्राहक (All Policyholders)</option>
+            <option value="agent-individual">एक जना एजेन्ट (Individual Agent)</option>
+            <option value="agent-all">सबै एजेन्ट (All Agents)</option>
+          </select>
+        </div>
+        <div class="field hidden" id="notifRecipientPickWrap" style="margin-bottom:14px;">
+          <label id="notifRecipientPickLabel">ग्राहक छान्नुहोस्</label>
+          <select id="notifRecipientPick"></select>
+        </div>
+        <div class="field" style="margin-bottom:14px;">
+          <label>शीर्षक</label>
+          <input id="notifTitle" placeholder="जस्तै: नवीकरण सम्झना">
+        </div>
+        <div class="field" style="margin-bottom:14px;">
+          <label>सन्देश</label>
+          <textarea id="notifMessage" rows="4" placeholder="सन्देश यहाँ लेख्नुहोस्..."></textarea>
+        </div>
+        <button class="btn gold" onclick="sendAdminNotification_()"><i class="fa-solid fa-paper-plane"></i> पठाउनुहोस्</button>
+      </div>
+
+      <div class="panel">
+        <div class="panel-head"><h3><i class="fa-solid fa-clock-rotate-left"></i> पठाइएका सूचनाहरू</h3></div>
+        <div class="table-scroll"><table>
+          <thead><tr><th>प्रकार</th><th>कसलाई</th><th>शीर्षक</th><th>सन्देश</th><th>समय</th><th></th></tr></thead>
+          <tbody id="notifSentLog"></tbody>
+        </table></div>
+      </div>
+    </div>
+
     <!-- CONTENT TAB (Agents / Videos / Audio / Bonus Rates) -->
     <div class="admin-tab hidden" id="tab-content">
       <div class="app-topbar">
@@ -1217,6 +1391,7 @@ tr:hover td{background:var(--cream);}
     </div>
 
   </main>
+  </div>
 </div>
 
 <!-- Content add/edit modal (generic — Agents/Videos/Audio/Bonus) -->
@@ -1334,6 +1509,17 @@ tr:hover td{background:var(--cream);}
     <div class="field" style="margin-bottom:12px;"><label>चासोको योजना</label><input id="pInterest"></div>
     <div class="field" style="margin-bottom:18px;"><label>नोट</label><textarea id="pNote" rows="3"></textarea></div>
     <button class="btn block" onclick="saveProspect()">सेभ गर्नुहोस्</button>
+  </div>
+</div>
+
+<!-- सूचना (Notification) मोडल — Member र Admin/Agent दुवै पोर्टलको बेल आइकनले
+     यही एउटै मोडल साझा गर्छन्; कुन सूची (customer वा admin) देखाउने भन्ने कुरा
+     खुल्दाको बेलाको session.role अनुसार JS ले नै छान्छ (हेर्नुहोस् openNotifModal)। -->
+<div class="modal-backdrop" id="notifModalBackdrop">
+  <div class="modal">
+    <button class="modal-close" onclick="closeNotifModal()"><i class="fa-solid fa-xmark"></i></button>
+    <h3><i class="fa-solid fa-bell"></i> सूचनाहरू</h3>
+    <div id="notifModalList" style="margin-top:14px; display:flex; flex-direction:column; gap:10px; max-height:60vh; overflow-y:auto;"></div>
   </div>
 </div>
 
@@ -1500,6 +1686,18 @@ const today = new Date();
 
 let customers = [];
 let prospects = [];
+// Agent Dashboard को बोनस रेट/परीक्षा तयारी सामग्री/ब्रोसर/मासिक स्किम — Sheet को
+// "AgentResources" ट्याबबाट (Category/Title/Description/Value/Link स्तम्भ)।
+let agentResources = [];
+// डाउनलाइन एजेन्टहरूको मासिक व्यवसाय — Sheet को "Agent Business" ट्याबबाट
+// ({agent, month (ISO date), amount})। Agent Dashboard को मासिक chart/ranking
+// र (महत्त्वपूर्ण) Salary Target गणना (renderOverview) दुवैमा प्रयोग हुन्छ —
+// Club/वार्षिक पोर्टफोलियोमा भने कहिल्यै जोडिँदैन।
+let agentBusiness = [];
+// सूचना (Notification) बेल आइकनका लागि — customer ले लगइन गरेपछि (getNotificationsForCustomer)
+// वा admin ले लगइन गरेपछि (getAllNotifications) भरिन्छ। हेर्नुहोस् loadNotificationsForCustomer_/
+// loadNotificationsForAdmin_/openNotifModal तल।
+let NOTIFICATIONS = [];
 // salaryLevels/clubLevels अब यहाँ hardcode गरिँदैन — दुवै Sheet को "Targets" ट्याबबाट
 // (Scale/Level/Amount स्तम्भ) Firebase हुँदै getTargets_() ले पठाउँछ, हरेक वर्ष रकम
 // फेरिंदा agent ले सिधै Sheet मै अपडेट गर्न सक्नुहोस् भनेर। तलका array हरू apiCall
@@ -1774,9 +1972,22 @@ const BS_AD_FISCAL_YEAR_OFFSET = 57;
 // महिना-स्तरको approximate मिलान) प्रयोग गरिँदैन, किनभने वास्तविक साउन १ प्रायः
 // जुलाई १६ वा १७ मा पर्छ (कहिल्यै जुलाई १ मा पर्दैन) — त्यो झन्डै २ हप्ताको
 // फरकले साउन/असार सीमा नजिकैको भुक्तानहरू गलत आर्थिक वर्षमा गनिने बग निम्त्याउँथ्यो।
-// यसको सट्टा तल SHRAWAN1_TABLE_ मा सार्वजनिक रूपमा प्रकाशित (नेपाल सरकारको
-// आर्थिक वर्ष सुरु हुने आधिकारिक मिति) ठ्याक्कै साउन १ हरू राखिएको छ, र त्यहीँबाट
+// यसको सट्टा तल SHRAWAN1_TABLE_ मा ठ्याक्कै साउन १ हरू राखिएको छ, र त्यहीँबाट
 // दिनको स्तरमा ठ्याक्कै आर्थिक वर्षको सुरु/अन्त्य निकालिन्छ।
+//
+// यो तालिका अब हातले (hardcode गरेर) मात्र मर्मत हुँदैन — तल भएका मानहरू सुरुमै
+// पेज देखिनासाथ केही उपलब्ध होस् भनेर राखिएको सानो "seed" मात्र हुन्; loadAdminData()
+// चल्नासाथ backend (getFiscalYearAnchors_, Latest_Code.gs हेर्नुहोस्) बाट सधैं
+// एउटा भरपर्दो third-party API बाट ताजा गरी ल्याएर Firebase मा सधैंका लागि cache
+// गरिराखेको तालिका आइपुगेर यसमा थपिन्छ/overwrite हुन्छ — त्यसैले कुनै redeploy
+// नगरी नै आउने धेरै वर्षसम्म आफैं अपडेट भइरहन्छ। ध्यान दिनुहोस्: Nepal को Bikram
+// Sambat पात्रो सयौं वर्ष अगाडिसम्म गणितीय सूत्रले होइन, हरेक वर्ष छुट्टै खगोलीय
+// गणनाबाट (सरकारी पात्रो समितिले थोरै वर्षअघि मात्र प्रकाशित गरेर) तय हुन्छ,
+// त्यसैले "सयौं वर्षसम्म ठ्याक्कै सही" भन्ने ग्यारेन्टी कुनै स्रोतले (यो API
+// लगायत) दिन सक्दैन — यहाँको डिजाइनले जति टाढासम्म आधिकारिक रूपमा प्रकाशित
+// भइसकेको छ त्यति टाढासम्म सधैं ताजा/सही रहन्छ भन्ने मात्र सुनिश्चित गर्छ, र
+// त्योभन्दा परका (अझै प्रकाशितै नभएका) दुर्लभ वर्षका लागि मात्र माथिकै approximate
+// विधिमा फर्कन्छ — त्यो अवस्थामा पनि dashboard कहिल्यै तोडिँदैन।
 const SHRAWAN1_TABLE_ = {
   2078: '2021-07-16',
   2079: '2022-07-17',
@@ -1890,6 +2101,105 @@ function fiscalYearFirstPremiumBreakdown_(){
 }
 
 
+// चालु आर्थिक वर्षको [start, end] दायरा (renderOverview मा fiscalRange) भित्र
+// पर्ने सबै डाउनलाइन एजेन्ट व्यवसायको (agentBusiness, "Agent Business" ट्याबबाट)
+// जोड फर्काउँछ — Salary Target मा मात्र थपिन्छ, अरू कतै होइन।
+function downlineBusinessWithinRange_(start, end){
+  let total = 0;
+  agentBusiness.forEach(b => {
+    const d = new Date(b.month);
+    if(isNaN(d.getTime())) return;
+    if(d < start || d > end) return;
+    total += Number(b.amount) || 0;
+  });
+  return total;
+}
+
+// आजको महिनासहित पछिल्ला १२ क्यालेन्डर महिना (AD) को सूची {year, month, label}
+// फर्काउँछ, सबैभन्दा पुरानोदेखि नयाँको क्रममा। Date constructor ले महिना
+// underflow (जस्तै महिना -२) आफैं मिलाउने भएकोले वर्ष-सीमा नाघ्दा पनि सहज काम गर्छ।
+function last12CalendarMonths_(){
+  const months = [];
+  for(let i = 11; i >= 0; i--){
+    const d = new Date(today.getFullYear(), today.getMonth() - i, 1);
+    months.push({ year: d.getFullYear(), month: d.getMonth(), label: d.toLocaleDateString("en-GB", {month:"short", year:"2-digit"}) });
+  }
+  return months;
+}
+
+// पछिल्ला १२ महिनाको प्रत्येक महिनाको कुल डाउनलाइन व्यवसाय (सबै एजेन्ट जोडेर)।
+function monthlyAgentBusinessTotals_(){
+  const months = last12CalendarMonths_().map(m => ({ ...m, total: 0 }));
+  agentBusiness.forEach(b => {
+    const d = new Date(b.month);
+    if(isNaN(d.getTime())) return;
+    const row = months.find(m => m.year === d.getFullYear() && m.month === d.getMonth());
+    if(row) row.total += Number(b.amount) || 0;
+  });
+  return months;
+}
+
+// पछिल्ला १२ महिना भित्रको मात्र डेटा लिएर, प्रत्येक एजेन्टको जोड निकाली घट्दो
+// क्रममा (सबैभन्दा धेरै व्यवसाय गर्नेदेखि) फर्काउँछ — पहिलो item नै "उत्कृष्ट
+// प्रदर्शन गर्ने एजेन्ट" हो।
+function agentBusinessRanking_(){
+  const months = last12CalendarMonths_();
+  const rangeStart = new Date(months[0].year, months[0].month, 1);
+  const rangeEndExclusive = new Date(today.getFullYear(), today.getMonth() + 1, 1);
+  const totals = {};
+  agentBusiness.forEach(b => {
+    const d = new Date(b.month);
+    if(isNaN(d.getTime())) return;
+    if(d < rangeStart || d >= rangeEndExclusive) return;
+    totals[b.agent] = (totals[b.agent] || 0) + (Number(b.amount) || 0);
+  });
+  return Object.keys(totals)
+    .map(agent => ({ agent, total: totals[agent] }))
+    .sort((a, b) => b.total - a.total);
+}
+
+// Agent Dashboard को "डाउनलाइन एजेन्ट व्यवसाय" प्यानल (मासिक chart + ranking)
+// भर्छ। दुवैमध्ये कुनै पनि (Sheet अझै सेटअप नभएको) खाली भए, उपयुक्त खाली-अवस्था
+// सन्देश देखिन्छ।
+function renderAgentBusinessCharts_(){
+  const monthlyEl = document.getElementById("agentBusinessMonthlyChart");
+  if(monthlyEl){
+    const monthly = monthlyAgentBusinessTotals_();
+    if(!agentBusiness.length){
+      monthlyEl.innerHTML = `<p style="color:var(--ink-soft); text-align:center; width:100%;">Sheet को "Agent Business" ट्याबमा अझै डेटा थपिएको छैन।</p>`;
+    } else {
+      const max = Math.max(1, ...monthly.map(m => m.total));
+      monthlyEl.innerHTML = monthly.map(m => `
+        <div style="flex:1; display:flex; flex-direction:column; align-items:center; justify-content:flex-end; gap:6px; min-width:0; height:100%;">
+          <span class="mono" style="font-size:.6rem; color:var(--ink-soft); writing-mode:vertical-rl;">${m.total > 0 ? fmtMoney(m.total) : ""}</span>
+          <div title="${m.label}: ${fmtMoney(m.total)}" style="width:100%; max-width:26px; background:var(--gold); border-radius:4px 4px 0 0; height:${Math.max(2, Math.round((m.total/max)*100))}px;"></div>
+          <span style="font-size:.62rem; color:var(--ink-soft); white-space:nowrap;">${m.label}</span>
+        </div>
+      `).join("");
+    }
+  }
+
+  const rankEl = document.getElementById("agentBusinessRanking");
+  if(rankEl){
+    const ranking = agentBusinessRanking_();
+    if(!ranking.length){
+      rankEl.innerHTML = `<p style="color:var(--ink-soft); text-align:center;">Sheet को "Agent Business" ट्याबमा अझै डेटा थपिएको छैन।</p>`;
+    } else {
+      const max = Math.max(1, ...ranking.map(r => r.total));
+      rankEl.innerHTML = ranking.map((r, i) => `
+        <div>
+          <div style="display:flex; justify-content:space-between; font-size:.85rem; margin-bottom:4px;">
+            <span>${i === 0 ? "🏆 " : ""}${r.agent}</span>
+            <span class="mono">${fmtMoney(r.total)}</span>
+          </div>
+          <div class="bar"><i style="width:${Math.round((r.total/max)*100)}%; background:${i === 0 ? "var(--gold)" : "var(--pine)"};"></i></div>
+        </div>
+      `).join("");
+    }
+  }
+}
+
+
 // दिइएको तह-सूची (levels — Sheet को row क्रम अनुसार सानोदेखि ठूलो भएको मानिन्छ,
 // Salary Scale र Club Target दुवैका लागि साझा प्रयोग हुन्छ) र संकलित रकमबाट हाल
 // पुगिसकेको तह (reached) र अर्को नपुगेको तह (next) फर्काउँछ। सबैभन्दा माथिल्लो
@@ -1963,6 +2273,97 @@ function renderClubBenefits_(collected, levels){
       <div>${benefitBadgesHtml_(next.benefits, "warn")}</div>`;
   }
   el.innerHTML = html;
+}
+
+// "एजेन्ट ड्यासबोर्ड" ट्याब भर्छ — Club तह तालिका targets.clubLevels (Targets
+// ट्याबबाटै, Overview मा पनि प्रयोग हुने उही डेटा) बाट, बोनस रेट तालिका
+// BONUS_RATES (छुट्टै BonusRates ट्याबबाट, Member Dashboard सँग साझा) बाट, र
+// बाँकी (परीक्षा तयारी सामग्री, ब्रोसर/क्याटलग, मासिक स्किम) agentResources
+// (AgentResources ट्याबबाट) लाई Category अनुसार समूहमा बाँडेर छुट्टाछुट्टै
+// प्यानल बनाएर देखाउँछ। कुनै पनि (Sheet अझै सेटअप नभएको) खाली भए, उपयुक्त
+// खाली-अवस्था सन्देश देखिन्छ, dashboard कहिल्यै तोडिँदैन।
+function renderAgentDashboard_(){
+  const clubTableEl = document.getElementById("agentDashboardClubTable");
+  if(clubTableEl){
+    const levels = targets.clubLevels || [];
+    clubTableEl.innerHTML = levels.length ? levels.map(lv => `
+      <tr>
+        <td>${lv.name}</td>
+        <td class="mono">${fmtMoney(lv.amount)}</td>
+        <td>${lv.benefits && Object.keys(lv.benefits).length ? benefitBadgesHtml_(lv.benefits, "ok") : `<span style="color:var(--ink-soft); font-size:.8rem;">—</span>`}</td>
+      </tr>
+    `).join("") : `<tr><td colspan="3" style="color:var(--ink-soft); text-align:center;">Sheet को "Targets" ट्याबमा अझै कुनै Club तह थपिएको छैन।</td></tr>`;
+  }
+
+  const bonusTableEl = document.getElementById("agentDashboardBonusTable");
+  if(bonusTableEl){
+    bonusTableEl.innerHTML = BONUS_RATES.length ? BONUS_RATES.map(b => `
+      <tr><td>${b.plan}</td><td class="mono">${b.rate}</td></tr>
+    `).join("") : `<tr><td colspan="2" style="color:var(--ink-soft); text-align:center;">Sheet को "BonusRates" ट्याबमा अझै कुनै दर थपिएको छैन।</td></tr>`;
+  }
+
+  renderAgentBusinessCharts_();
+  renderAgentTargetedNotifications_();
+
+  const sectionsEl = document.getElementById("agentDashboardResourceSections");
+  if(!sectionsEl) return;
+  if(!agentResources.length){
+    sectionsEl.innerHTML = `<div class="panel"><p style="color:var(--ink-soft); text-align:center;">परीक्षा तयारी सामग्री, ब्रोसर/क्याटलग, मासिक स्किम जस्ता सामग्री अझै थपिएको छैन — तलको नोटमा भनिएझैं Sheet को "AgentResources" ट्याबमा थप्नुहोस्।</p></div>`;
+    return;
+  }
+  const groups = {};
+  const order = [];
+  agentResources.forEach(r => {
+    if(!groups[r.category]){ groups[r.category] = []; order.push(r.category); }
+    groups[r.category].push(r);
+  });
+  const iconForCategory_ = cat => {
+    const c = cat.toLowerCase();
+    if(c.includes("exam")) return "fa-graduation-cap";
+    if(c.includes("brochure") || c.includes("catalog") || c.includes("catalogue")) return "fa-book-open";
+    if(c.includes("scheme") || c.includes("monthly")) return "fa-calendar-days";
+    return "fa-star";
+  };
+  // हरेक item ले सोही item को index (category भित्रको) बाट बनेको स्थिर DOM id
+  // पाउँछ, ताकि "पूरा लेख पढ्नुहोस्" ले ठ्याक्कै त्यही item को body खण्ड मात्र
+  // देखाओस्/लुकाओस् (एउटै Category मा जति चाहे उति item भए पनि, अर्थात् Sheet
+  // मा row हरूको संख्यामा कुनै हद (limit) छैन)।
+  sectionsEl.innerHTML = order.map(cat => `
+    <div class="panel">
+      <div class="panel-head"><h3><i class="fa-solid ${iconForCategory_(cat)}"></i> ${cat} <span style="font-size:.7rem; font-weight:400; color:var(--ink-soft);">(${groups[cat].length})</span></h3></div>
+      <div style="display:flex; flex-direction:column; gap:2px;">
+        ${groups[cat].map((r, i) => {
+          const bodyId = `agentRes-${cat.replace(/[^a-zA-Z0-9]/g,"")}-${i}`;
+          return `
+          <div style="padding:10px 0; border-bottom:1px solid var(--line);">
+            <div style="display:flex; justify-content:space-between; align-items:center; gap:12px; flex-wrap:wrap;">
+              <div>
+                <div style="font-weight:600; font-size:.92rem;">${r.title}${r.value ? ` <span class="mono" style="font-weight:400; color:var(--gold); font-size:.85rem;">— ${r.value}</span>` : ""}</div>
+                ${r.description ? `<div style="font-size:.8rem; color:var(--ink-soft); margin-top:2px;">${r.description}</div>` : ""}
+              </div>
+              <div style="display:flex; gap:8px; flex-shrink:0;">
+                ${r.body ? `<button class="btn ghost sm" onclick="toggleAgentResourceBody_('${bodyId}', this)"><i class="fa-solid fa-book-open"></i> पूरा लेख पढ्नुहोस्</button>` : ""}
+                ${r.link ? `<a class="btn ghost sm" href="${r.link}" target="_blank" rel="noopener"><i class="fa-solid fa-download"></i> हेर्नुहोस्</a>` : ""}
+              </div>
+            </div>
+            ${r.body ? `<div id="${bodyId}" class="hidden" style="margin-top:10px; padding:14px; background:var(--cream); border-radius:8px; font-size:.88rem; line-height:1.7;">${r.body}</div>` : ""}
+          </div>
+        `;}).join("")}
+      </div>
+    </div>
+  `).join("");
+}
+
+// AgentResources को "Body" (पूरा लेख — Blog पोस्टजस्तै) भएको item मा "पूरा लेख
+// पढ्नुहोस्" थिच्दा, त्यो item को body खण्ड ठ्याक्कै त्यही ठाउँमा (Agent
+// Dashboard भित्रै, कुनै छुट्टै पेज/view बिना) देखिने/लुक्ने बनाउँछ।
+function toggleAgentResourceBody_(bodyId, btnEl){
+  const el = document.getElementById(bodyId);
+  if(!el) return;
+  const nowHidden = el.classList.toggle("hidden");
+  if(btnEl) btnEl.innerHTML = nowHidden
+    ? `<i class="fa-solid fa-book-open"></i> पूरा लेख पढ्नुहोस्`
+    : `<i class="fa-solid fa-book"></i> लेख लुकाउनुहोस्`;
 }
 
 // fiscalYearFirstPremiumBreakdown_() ले दिएको row हरू (हरेक आर्थिक वर्षको First
@@ -2397,10 +2798,49 @@ function setLoginTab(tab){
 function logout(){
   session = { role:null, customerId:null, customer:null };
   clearPersistedSession();
+  NOTIFICATIONS = [];
+  renderNotifBadge_();
   updateNavAuthUI();
   navigateTo("home");
 }
 function scrollToId(id){ document.getElementById(id).scrollIntoView({behavior:"smooth"}); }
+
+/* ============================================================
+   APP SHELL NAV — hamburger साइडबार (मोबाइल-मात्र, डेस्कटपमा साइडबार सधैं
+   देखिने भएकोले टग्गल गर्नु पर्दैन) + दायाँ कुनाको प्रोफाइल ड्रपडाउन। दुवै
+   Member र Admin शेल (.app-shell) ले उही function साझा गर्छन् — एकैचोटि
+   एउटा मात्र .app-shell.active हुने भएकोले सिधै त्यसैभित्र खोजे पुग्छ।
+   ============================================================ */
+function toggleAppSidebar(forceOpen){
+  const shell = document.querySelector(".app-shell.active");
+  if(!shell) return;
+  const side = shell.querySelector(".app-side");
+  const overlay = shell.querySelector(".app-side-overlay");
+  const nowOpen = forceOpen !== undefined ? forceOpen : !side.classList.contains("open");
+  side.classList.toggle("open", nowOpen);
+  if(overlay) overlay.classList.toggle("open", nowOpen);
+}
+function closeAppSidebar(){ toggleAppSidebar(false); }
+
+function toggleProfileMenu(){
+  const shell = document.querySelector(".app-shell.active");
+  if(!shell) return;
+  const dd = shell.querySelector(".profile-dropdown");
+  if(dd) dd.classList.toggle("hidden");
+}
+function closeProfileMenus_(){
+  document.querySelectorAll(".profile-dropdown").forEach(dd => dd.classList.add("hidden"));
+}
+// प्रोफाइल ड्रपडाउन बाहिर जहाँसुकै क्लिक गर्दा त्यो बन्द होस्; ड्रपडाउन आफैं भित्र
+// क्लिक गर्दा (उदाहरण: "लगआउट" थिच्दा) भने बन्द नहोस् भन्ने छुट्याउन .app-profile-wrap
+// भित्रको क्लिक हो/होइन जाँच्ने।
+document.addEventListener("click", (e) => {
+  if(!e.target.closest(".app-profile-wrap")) closeProfileMenus_();
+});
+// मोबाइलमा कुनै पनि साइडबार लिंक थिचेपछि drawer आफैं बन्द होस् (डेस्कटपमा यो
+// class ले कुनै भिजुअल असर पार्दैन, त्यसैले जहिलेसुकै कल गर्न मिल्छ)।
+document.querySelectorAll(".app-side .side-link").forEach(btn => btn.addEventListener("click", closeAppSidebar));
+
 function toast(msg){
   const t=document.getElementById("toast"); t.textContent=msg; t.classList.add("show");
   setTimeout(()=>t.classList.remove("show"), 2600);
@@ -2505,10 +2945,13 @@ async function adminLogin(){
 // लगइन-पछि मात्र चल्ने — ग्राहकको संवेदनशील पूरा सूची अनाधिकृत व्यक्तिको ब्राउजरमा कहिल्यै लोड नहोस् भनेर।
 // तीनवटै अनुरोध समानान्तर (parallel) पठाइन्छ ताकि Apps Script को ढिलो प्रतिक्रिया थप नजोडिओस्।
 async function loadAdminData(){
-  const [remoteCustomers, remoteProspects, remoteTargets] = await Promise.all([
+  const [remoteCustomers, remoteProspects, remoteTargets, remoteAnchors, remoteAgentResources, remoteAgentBusiness] = await Promise.all([
     apiCall("getCustomers"),
     apiCall("getProspects"),
     apiCall("getTargets"),
+    apiCall("getFiscalYearAnchors"),
+    apiCall("getAgentResources"),
+    apiCall("getAgentBusiness"),
   ]);
 
   const errors = [];
@@ -2527,11 +2970,35 @@ async function loadAdminData(){
   } else {
     errors.push("टार्गेट: " + (remoteTargets && remoteTargets.error ? remoteTargets.error : "डेटा ल्याउन सकिएन।"));
   }
+  // साउन १ अंकर मितिहरू (आर्थिक वर्षको ठ्याक्कै सुरु/अन्त्य निकाल्न प्रयोग हुने) —
+  // backend ले भरपर्दो third-party API बाट ल्याएर सधैंका लागि cache गरिराखेको
+  // तालिका यहाँ आइपुगेपछि स्थानीय SHRAWAN1_TABLE_ (seed) मा थपिन्छ/ओभरराइट हुन्छ।
+  // यो नल्याइए पनि admin dashboard रोकिँदैन — SHRAWAN1_TABLE_ को seed मान र
+  // (त्योभन्दा बाहिरका वर्षका लागि) पुरानो approximate fallback ले काम चलाइरहन्छ,
+  // त्यसैले यसलाई errors सूचीमा थपिएको छैन (त्रुटि होइन, केवल कम-precision)।
+  if(remoteAnchors && remoteAnchors.ok && remoteAnchors.shrawan1Table){
+    Object.assign(SHRAWAN1_TABLE_, remoteAnchors.shrawan1Table);
+  }
+  // Agent Dashboard को सामग्री — Sheet को "AgentResources" ट्याब अझै सेटअप
+  // नभएको हुन सक्ने भएकोले (Targets जस्तै नयाँ ऐच्छिक ट्याब), यो नआए पनि त्रुटि
+  // मानिँदैन — खाली सूची भएर Agent Dashboard ले उपयुक्त "अझै सामग्री थपिएको छैन"
+  // सन्देश देखाउँछ (renderAgentDashboard_ हेर्नुहोस्)।
+  if(remoteAgentResources && remoteAgentResources.ok && Array.isArray(remoteAgentResources.resources)){
+    agentResources = remoteAgentResources.resources;
+  }
+  // डाउनलाइन एजेन्ट व्यवसाय — Sheet को "Agent Business" ट्याब अझै सेटअप नभएको
+  // हुन सक्ने भएकोले (त्रुटि होइन): नआए agentBusiness खाली नै रहन्छ, जसले
+  // गर्दा Salary Target गणना स्वतः "self मात्र" मा फर्किन्छ (जस्तो पहिले थियो)।
+  if(remoteAgentBusiness && remoteAgentBusiness.ok && Array.isArray(remoteAgentBusiness.business)){
+    agentBusiness = remoteAgentBusiness.business;
+  }
   if(errors.length){
     showAdminError(errors.join(" · "));
   } else {
     hideAdminError();
   }
+  populateNotifCustomerPick_();
+  loadNotificationsForAdmin_(); // सूचना बेल आइकन/लग — customers लोड भइसकेपछि (audience dropdown का लागि) मात्र चलाउने
 }
 function showAdminError(msg){
   const box = document.getElementById("adminErrorBanner");
@@ -3335,6 +3802,19 @@ async function loadPolicyInfoViaAppsScript_(){
   }
 }
 
+async function loadBonusRatesViaAppsScript_(){
+  if(!CONFIG.APPS_SCRIPT_URL) return;
+  try{
+    const res = await apiCall("getBonusRates", {});
+    if(res && res.ok && Array.isArray(res.rates) && res.rates.length){
+      BONUS_RATES = res.rates;
+      renderUserBonusTable();
+    }
+  } catch(err){
+    console.warn("[apiCall] getBonusRates fallback failed:", err);
+  }
+}
+
 async function initializeData(){
   // नोट (सुरक्षा): ग्राहक/प्रोस्पेक्ट/टार्गेट जस्ता संवेदनशील डेटा यहाँ (पेज लोड हुनेबित्तिकै) कहिल्यै
   // fetch गरिँदैन — ती केवल सफल Agent login पछि loadAdminData() मार्फत मात्र ल्याइन्छ।
@@ -3346,12 +3826,13 @@ async function initializeData(){
   if(!CONFIG.FIREBASE_CONFIG || !CONFIG.FIREBASE_CONFIG.databaseURL) return;
 
   try{
-    const [remotePolicyholders, remoteAgents, remoteBlogs, remotePolicyInfo, remoteStats] = await Promise.all([
+    const [remotePolicyholders, remoteAgents, remoteBlogs, remotePolicyInfo, remoteStats, remoteBonusRates] = await Promise.all([
       fbReadOnce_("public/recentPolicyholders"),
       fbReadOnce_("downlineAgents"),
       fbReadOnce_("blogs"),
       fbReadOnce_("policyInfo"),
       fbReadOnce_("public/stats"),
+      fbReadOnce_("bonusRates"),
     ]);
 
     if(remotePolicyholders.ok && Array.isArray(remotePolicyholders.value) && remotePolicyholders.value.length){
@@ -3412,6 +3893,27 @@ async function initializeData(){
       Object.assign(SITE_STATS, remoteStats.value);
     } else if(!remoteStats.ok){
       console.warn("[Firebase] stats:", remoteStats.error);
+    }
+
+    // बोनस दर -- Sheet को "BonusRates" ट्याबबाट। यो Member Dashboard को "हालको
+    // बोनस दर" तालिका (renderUserBonusTable) र परिपक्वता अनुमान क्यालकुलेटर, अनि
+    // Agent Dashboard को "बोनस रेट" प्यानल दुवैले साझा गर्छन् — त्यसैले नयाँ डेटा
+    // आइपुगेपछि दुवैका लागि उही वैश्विक BONUS_RATES array लाई ओभरराइट गरे पुग्छ,
+    // हरेकले आफू देखिँदा (login पछि वा ट्याब खोल्दा) यसैबाट पढ्छ। PolicyInfo
+    // जस्तै यहाँ पनि उही ३ तहको fallback: खाली सूची (अझै import नभएको) वा सिधा
+    // Firebase read नै असफल (Rules अझै "/bonusRates" खोलिएको छैन) भए, Apps
+    // Script मार्फत (Rules ले नरोक्ने) ब्याकअप तान्छौं।
+    if(remoteBonusRates.ok && remoteBonusRates.value){
+      const list = fbObjectToArray_(remoteBonusRates.value);
+      if(list.length){
+        BONUS_RATES = list;
+        renderUserBonusTable();
+      } else {
+        loadBonusRatesViaAppsScript_();
+      }
+    } else {
+      console.warn("[Firebase] bonusRates:", remoteBonusRates.error);
+      loadBonusRatesViaAppsScript_();
     }
 
     initPublicStats();
@@ -3477,6 +3979,14 @@ function renderUserDashboard(cust){
   document.getElementById("userStatusTag").outerHTML = statusTag(days).replace('class="tag', 'id="userStatusTag" class="tag');
   document.getElementById("userRenewDate").textContent = fmtDate(cust.renewDate) + ` (${days} दिन बाँकी)`;
   setDial("userDialRing","userDialText", Math.max(days,0), 90);
+  if(session.customerId) loadNotificationsForCustomer_(session.customerId);
+
+  // दायाँ कुनाको प्रोफाइल पिलमा ग्राहकको नाम/फोटो देखाउने (फोटो नभए नामको पहिलो अक्षर)
+  document.getElementById("memberProfileName").textContent = cust.name || "ग्राहक";
+  const avatarEl = document.getElementById("memberProfileAvatar");
+  avatarEl.innerHTML = cust.photoUrl
+    ? `<img src="${cust.photoUrl}" alt="${cust.name}">`
+    : `<span>${(cust.name||"ग").trim().charAt(0)}</span>`;
 
   const photoEl = document.getElementById("userPhoto");
   if(cust.photoUrl){
@@ -3553,6 +4063,189 @@ function setAdminTab(tab){
   document.getElementById("tab-"+tab).classList.remove("hidden");
   document.querySelectorAll(".app-side .side-link[data-tab]").forEach(b=>b.classList.toggle("active", b.dataset.tab===tab));
   if(tab === "content") renderContentTable();
+  if(tab === "agent-dashboard") renderAgentDashboard_();
+  if(tab === "notifications"){ populateNotifCustomerPick_(); renderNotifSentLog_(); }
+}
+
+/* ============================================================
+   NOTIFICATIONS — बेल आइकन (Member + Admin/Agent दुवै पोर्टल) र
+   Admin को "सूचना पठाउनुहोस्" ट्याब।
+
+   "पढियो" (read/unread) ट्र्याकिङ यो ब्राउजरको localStorage मा राखिन्छ —
+   यो फाइल Claude को artifact preview sandbox मा होइन, प्रयोगकर्ताको आफ्नै
+   Apps Script/Firebase Hosting मा चल्ने वास्तविक वेबसाइट भएकोले localStorage
+   प्रयोग गर्न सुरक्षित छ (त्यो प्रतिबन्ध केवल Claude.ai भित्रैको artifact
+   preview iframe का लागि हो)।
+   ============================================================ */
+function getSeenNotifIds_(){
+  try{ return JSON.parse(localStorage.getItem("seenNotifIds") || "[]"); }
+  catch(err){ return []; }
+}
+function markNotifsSeen_(ids){
+  try{
+    const seen = new Set(getSeenNotifIds_());
+    ids.forEach(id => seen.add(id));
+    // localStorage मा असीमित नबढोस् भनेर बढीमा पछिल्ला २०० id मात्र राख्ने
+    localStorage.setItem("seenNotifIds", JSON.stringify(Array.from(seen).slice(-200)));
+  } catch(err){ /* localStorage उपलब्ध नभएको (private/incognito मोड आदि) बेला चुपचाप बेवास्ता */ }
+  renderNotifBadge_();
+}
+function unreadNotifCount_(){
+  const seen = new Set(getSeenNotifIds_());
+  return NOTIFICATIONS.filter(n => !seen.has(n.id)).length;
+}
+function renderNotifBadge_(){
+  const count = unreadNotifCount_();
+  ["notifBadgeMember","notifBadgeAdmin"].forEach(elId => {
+    const el = document.getElementById(elId);
+    if(!el) return;
+    if(count > 0){ el.textContent = count > 99 ? "99+" : String(count); el.classList.remove("hidden"); }
+    else { el.classList.add("hidden"); }
+  });
+}
+
+async function loadNotificationsForCustomer_(customerId){
+  const remote = await apiCall("getNotificationsForCustomer", {customerId});
+  if(remote && remote.ok && Array.isArray(remote.notifications)){
+    NOTIFICATIONS = remote.notifications;
+    renderNotifBadge_();
+  }
+}
+async function loadNotificationsForAdmin_(){
+  const remote = await apiCall("getAllNotifications");
+  if(remote && remote.ok && Array.isArray(remote.items)){
+    NOTIFICATIONS = remote.items.slice().sort((a,b) => new Date(b.createdAt) - new Date(a.createdAt));
+    renderNotifBadge_();
+    renderNotifSentLog_();
+    renderAgentTargetedNotifications_();
+  }
+}
+
+function relativeTimeNe_(iso){
+  const d = new Date(iso);
+  if(isNaN(d.getTime())) return "";
+  const diffMin = Math.round((Date.now() - d.getTime())/60000);
+  if(diffMin < 1) return "अहिले";
+  if(diffMin < 60) return diffMin + " मिनेट अगाडि";
+  const diffHr = Math.round(diffMin/60);
+  if(diffHr < 24) return diffHr + " घण्टा अगाडि";
+  const diffDay = Math.round(diffHr/24);
+  if(diffDay < 30) return diffDay + " दिन अगाडि";
+  return d.toLocaleDateString("en-GB", {day:"numeric", month:"short", year:"numeric"});
+}
+
+// बेल आइकन थिच्दा — session.role जे भए पनि (customer वा admin) उही
+// NOTIFICATIONS array बाट देखाउँछ, किनभने त्यो array पहिल्यै login-appropriate
+// (getNotificationsForCustomer वा getAllNotifications) source बाट भरिइसकेको हुन्छ।
+function openNotifModal(){
+  const listEl = document.getElementById("notifModalList");
+  if(!NOTIFICATIONS.length){
+    listEl.innerHTML = `<p style="color:var(--ink-soft); text-align:center; padding:20px 0;">हाल कुनै सूचना छैन।</p>`;
+  } else {
+    listEl.innerHTML = NOTIFICATIONS.map(n => `
+      <div style="padding:12px; background:var(--cream); border-radius:10px;">
+        <div style="display:flex; justify-content:space-between; align-items:baseline; gap:10px;">
+          <b style="font-size:.9rem;">${n.title}</b>
+          <span style="font-size:.72rem; color:var(--ink-soft); flex-shrink:0;">${relativeTimeNe_(n.createdAt)}</span>
+        </div>
+        <p style="font-size:.85rem; margin:6px 0 0; line-height:1.6;">${n.message}</p>
+      </div>
+    `).join("");
+  }
+  document.getElementById("notifModalBackdrop").classList.add("open");
+  markNotifsSeen_(NOTIFICATIONS.map(n => n.id));
+}
+function closeNotifModal(){
+  document.getElementById("notifModalBackdrop").classList.remove("open");
+}
+
+/* ---------- Admin "सूचना पठाउनुहोस्" ट्याब ----------
+   audience selector को value "<audienceType>-<audienceScope>" ढाँचामा छ
+   (जस्तै "policyholder-individual", "agent-all") — यसैबाट दुई अलग-अलग फिल्ड
+   (type, scope) निकालिन्छ, ताकि ग्राहक/एजेन्ट र individual/all कहिल्यै
+   नमिसियोस् (हेर्नुहोस् Latest_Code.gs को sendNotification_ माथिको टिप्पणी)। */
+function onNotifAudienceTypeChange_(){
+  const [type, scope] = document.getElementById("notifAudienceType").value.split("-");
+  const wrap = document.getElementById("notifRecipientPickWrap");
+  wrap.classList.toggle("hidden", scope !== "individual");
+  if(scope !== "individual") return;
+  document.getElementById("notifRecipientPickLabel").textContent = type === "agent" ? "एजेन्ट छान्नुहोस्" : "ग्राहक छान्नुहोस्";
+  populateNotifRecipientPick_(type);
+}
+function populateNotifRecipientPick_(type){
+  const sel = document.getElementById("notifRecipientPick");
+  if(!sel) return;
+  sel.innerHTML = (type === "agent")
+    ? downlineAgents.map(a => `<option value="${a.id}">${a.name}</option>`).join("")
+    : customers.map(c => `<option value="${c.id}">${c.name} — ${c.policy}</option>`).join("");
+}
+// setAdminTab('notifications') ले (customers लोड भइसकेपछि) कल गर्छ, ताकि
+// पिकर सधैं ताजा सूचीसँग तयार होस् — डिफल्ट रूपमा "policyholder-individual"
+// छानिएको हुन्छ, त्यसैले customer सूची अगाडि नै भर्ने।
+function populateNotifCustomerPick_(){
+  populateNotifRecipientPick_("policyholder");
+}
+async function sendAdminNotification_(){
+  const [audienceType, audienceScope] = document.getElementById("notifAudienceType").value.split("-");
+  const title = document.getElementById("notifTitle").value.trim();
+  const message = document.getElementById("notifMessage").value.trim();
+  if(!title || !message){ toast("शीर्षक र सन्देश दुवै भर्नुहोस्।"); return; }
+
+  let audienceId = "", audienceLabel = "";
+  if(audienceScope === "individual"){
+    const sel = document.getElementById("notifRecipientPick");
+    const list = audienceType === "agent" ? downlineAgents : customers;
+    const picked = list.find(x => x.id === sel.value);
+    if(!picked){ toast(audienceType === "agent" ? "कृपया एजेन्ट छान्नुहोस्।" : "कृपया ग्राहक छान्नुहोस्।"); return; }
+    audienceId = picked.id;
+    audienceLabel = picked.name;
+  }
+
+  const remote = await apiCall("sendNotification", {audienceType, audienceScope, audienceId, audienceLabel, title, message});
+  if(!remote || !remote.ok){ toast("सूचना पठाउन सकिएन।"); return; }
+  toast("सूचना पठाइयो।");
+  document.getElementById("notifTitle").value = "";
+  document.getElementById("notifMessage").value = "";
+  loadNotificationsForAdmin_();
+}
+function renderNotifSentLog_(){
+  const tbody = document.getElementById("notifSentLog");
+  if(!tbody) return;
+  tbody.innerHTML = NOTIFICATIONS.length ? NOTIFICATIONS.map(n => `
+    <tr>
+      <td>${n.audienceType === "agent" ? "एजेन्ट" : "ग्राहक"}${n.type === "renewal" ? " · स्वचालित" : ""}</td>
+      <td>${n.audienceLabel || (n.audienceScope === "all" ? "सबै" : n.audienceId)}</td>
+      <td>${n.title}</td>
+      <td style="max-width:220px; white-space:normal;">${n.message}</td>
+      <td class="mono" style="font-size:.78rem;">${relativeTimeNe_(n.createdAt)}</td>
+      <td><button class="icon-btn" onclick="deleteNotification_('${n.id}')"><i class="fa-solid fa-trash"></i></button></td>
+    </tr>
+  `).join("") : `<tr><td colspan="6" style="text-align:center; color:var(--ink-soft);">हालसम्म कुनै सूचना पठाइएको छैन।</td></tr>`;
+}
+
+// Agent Dashboard को "एजेन्टलाई सूचना" प्यानल — NOTIFICATIONS (admin ले
+// getAllNotifications बाट लोड गरिसकेको पूरा सूची) मध्ये audienceType==="agent"
+// भएका मात्र देखाउँछ। यसले ग्राहकलाई पठाइएका सूचनासँग कहिल्यै नमिसियोस् भन्ने
+// ग्यारेन्टी दिन्छ (audienceType फरक भएकोले)।
+function renderAgentTargetedNotifications_(){
+  const el = document.getElementById("agentTargetedNotifList");
+  if(!el) return;
+  const agentNotifs = NOTIFICATIONS.filter(n => n.audienceType === "agent");
+  el.innerHTML = agentNotifs.length ? agentNotifs.map(n => `
+    <div style="padding:12px; background:var(--cream); border-radius:10px;">
+      <div style="display:flex; justify-content:space-between; align-items:baseline; gap:10px;">
+        <b style="font-size:.88rem;">${n.title} <span class="mono" style="font-weight:400; font-size:.78rem; color:var(--gold);">— ${n.audienceLabel || (n.audienceScope === "all" ? "सबै एजेन्ट" : n.audienceId)}</span></b>
+        <span style="font-size:.7rem; color:var(--ink-soft); flex-shrink:0;">${relativeTimeNe_(n.createdAt)}</span>
+      </div>
+      <p style="font-size:.84rem; margin:6px 0 0; line-height:1.6;">${n.message}</p>
+    </div>
+  `).join("") : `<p style="color:var(--ink-soft); text-align:center;">हाल एजेन्टलाई पठाइएको कुनै सूचना छैन।</p>`;
+}
+
+async function deleteNotification_(id){
+  if(!confirm("यो सूचना मेटाउने? (ग्राहकको बेल सूचीबाट पनि हट्छ)")) return;
+  await apiCall("deleteNotification", {id});
+  loadNotificationsForAdmin_();
 }
 
 function renderAdminAll(){
@@ -3655,9 +4348,21 @@ function renderOverview(){
     fyRangeEl.textContent = `चालु आर्थिक वर्ष: ${fmtAd(fiscalRange.start)} – ${fmtAd(fiscalRange.end)}`;
   }
 
-  // Salary Scale — चालु आर्थिक वर्ष (साउन १ – असार मसान्त)
-  const salaryCollected = fiscalYtdFirstPremiumWeighted_(SALARY_TARGET_SINGLE_PREMIUM_WEIGHT);
+  // Salary Scale — चालु आर्थिक वर्ष (साउन १ – असार मसान्त)। यहाँ मात्र (Club र
+  // वार्षिक पोर्टफोलियोमा होइन) सबै डाउनलाइन एजेन्टको व्यवसाय (Sheet को "Agent
+  // Business" ट्याबबाट, downlineBusinessWithinRange_) पनि थपिन्छ — तपाईंको
+  // आफ्नै (self) योगदान अझै पहिलेकै भारित (weighted) तरिकाले, डाउनलाइनको भने
+  // Amount जति नै सिधा जोडेर (कुनै Single Premium भारित छुट्याइ यहाँ लागू
+  // हुँदैन, किनभने Agent Business ट्याबमा त्यो विवरण छुट्टिँदैन)।
+  const downlineSalaryContribution = downlineBusinessWithinRange_(fiscalRange.start, fiscalRange.end);
+  const salaryCollected = fiscalYtdFirstPremiumWeighted_(SALARY_TARGET_SINGLE_PREMIUM_WEIGHT) + downlineSalaryContribution;
   renderTierPanel_(salaryCollected, targets.salaryLevels, "ovSalaryCollected", "ovSalaryTierLabel", "ovSalaryBar", "ovSalaryNote");
+  const salaryDownlineNoteEl = document.getElementById("ovSalaryDownlineNote");
+  if(salaryDownlineNoteEl){
+    salaryDownlineNoteEl.textContent = downlineSalaryContribution > 0
+      ? `(यसमा डाउनलाइन एजेन्टको रु. ${downlineSalaryContribution.toLocaleString("en-IN")} व्यवसाय पनि समावेश छ)`
+      : "";
+  }
 
   // Club Target — चालु आर्थिक वर्ष (साउन १ – असार मसान्त)
   const clubCollected = fiscalYtdFirstPremiumWeighted_(CLUB_TARGET_SINGLE_PREMIUM_WEIGHT);
