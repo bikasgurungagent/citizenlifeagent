@@ -725,7 +725,7 @@ tr:hover td{background:var(--cream);}
         <p>बीमासम्बन्धी छोटा जानकारीमूलक र सचेतनामूलक भिडियोहरू।</p>
       </div>
 
-      <!-- Featured video (backend-configurable — हेर्नुहोस् FEATURED_VIDEOS array) -->
+      <!-- Featured video (Sheet को "FeaturedVideos" ट्याबबाट, Firebase हुँदै — हेर्नुहोस् initializeData() र Latest_Code.gs को getFeaturedVideos_) -->
       <div id="featuredVideos"></div>
 
       <a class="btn ghost sm" style="margin-top:16px;" href="https://www.youtube.com/@citizenlifeinsurancenepal" target="_blank"><i class="fa-brands fa-youtube"></i> थप भिडियोका लागि YouTube च्यानल हेर्नुहोस्</a>
@@ -919,7 +919,7 @@ tr:hover td{background:var(--cream);}
     </div>
   </div>
   <div class="wrap footer-affiliation">
-    <img src="https://login.citizenlifenepal.com/img/logo.png" alt="Citizen Life Insurance Company Limited — आधिकारिक लोगो" class="footer-affiliation-logo">
+    <img src="https://storage.khadgakali.edu.np/insurance/photos/citizenlife-logo.png" alt="Citizen Life Insurance Company Limited — आधिकारिक लोगो" class="footer-affiliation-logo">
     <div class="footer-affiliation-divider"></div>
     <img src="https://citizenlifenepal.com/wp-content/uploads/2026/04/citizen_iso-scaled.jpeg" alt="Citizen Life Insurance — ISO 9001:2015 प्रमाणपत्र" class="footer-affiliation-iso">
     <p class="footer-affiliation-note">यी लोगो/प्रमाणपत्र Citizen Life Insurance Company Limited को स्वामित्वमा रहेका हुन् र यहाँ कम्पनीसँगको आधिकारिक Affiliation (एजेन्ट ID: 40600496) देखाउने प्रयोजनका लागि मात्र प्रयोग गरिएको हो।</p>
@@ -3155,12 +3155,13 @@ function renderFaq(){
 // database query जाँदैन। नयाँ भिडियो थप्न सिधै यहीँ array मा दुई मध्ये जुनसुकै ढाँचामा object थप्नुहोस्:
 //   1) YouTube/Embed लिंकबाट:  {title, caption, type:"embed", src:"https://www.youtube.com/embed/VIDEO_ID"}
 //   2) सिधै HTML5 भिडियो फाइल (.mp4 आदि) बाट: {title, caption, type:"html5", src:"https://.../video.mp4"}
-let FEATURED_VIDEOS = [
-  {id:"v1", title:"Citizen Life Critical Care Plus Rider", caption:"घातक रोग (Critical Illness) विरुद्ध थप सुरक्षा दिने Citizen Life को Critical Care Plus Rider बारे जानकारी", type:"html5", src:"https://storage.khadgakali.edu.np/insurance/videos/Citizen%20Life%20Critical%20Care%20Plus.mp4"},
-  {id:"v2", title:"बेलैमा आफ्नो बाल बालिकाको बीमा गरौं", caption:"Moral Lesson — समयमै सन्तानको भविष्य सुरक्षित गर्नुको महत्त्व", type:"html5", src:"https://storage.khadgakali.edu.np/insurance/videos/%E0%A4%AC%E0%A5%87%E0%A4%B2%E0%A5%88%E0%A4%AE%E0%A4%BE%20%E0%A4%86%E0%A4%AB%E0%A5%8D%E0%A4%A8%E0%A5%8B%20%E0%A4%AC%E0%A4%BE%E0%A4%B2%20%E0%A4%AC%E0%A4%BE%E0%A4%B2%E0%A4%BF%E0%A4%95%E0%A4%BE%E0%A4%95%E0%A5%8B%20%E0%A4%AC%E0%A5%80%E0%A4%AE%E0%A4%BE%20%E0%A4%97%E0%A4%B0%E0%A5%8C%E0%A4%81%20(Moral%20Lesson).mp4"},
-  {id:"v3", title:"जीवन बीमा धेरै बुझेर मात्र गर्नु पर्दछ", caption:"मह जोडी Comedy — बुझेर मात्र बीमा गर्नुपर्ने कारण रमाइलो ढंगमा", type:"html5", src:"https://storage.khadgakali.edu.np/insurance/videos/%E0%A4%9C%E0%A5%80%E0%A4%B5%E0%A4%A8%20%E0%A4%AC%E0%A5%80%E0%A4%AE%E0%A4%BE%20%E0%A4%A7%E0%A5%87%E0%A4%B0%E0%A5%88%20%E0%A4%AC%E0%A5%81%E0%A4%9D%E0%A5%87%E0%A4%B0%20%E0%A4%AE%E0%A4%BE%E0%A4%A4%E0%A5%8D%E0%A4%B0%20%E0%A4%97%E0%A4%B0%E0%A5%8D%E0%A4%A8%20%E0%A4%AA%E0%A4%B0%E0%A5%8D%E0%A4%A6%E0%A4%9B%20(%E0%A4%AE%E0%A4%B9%20%E0%A4%9C%E0%A5%8B%E0%A4%A1%E0%A5%80%20comedy).mp4"},
-  {id:"v4", title:"जीवन बीमा जरुरी छ", caption:"मह जोडी — Why Insurance is Important", type:"html5", src:"https://storage.khadgakali.edu.np/insurance/videos/Why%20Insurance%20is%20Important%20(Mahajodi).mp4"},
-];
+// भिडियो/अडियो डेटा अब यहाँ hardcode गरिँदैन — दुवै Sheet को "FeaturedVideos"/
+// "AudioPlaylist" ट्याबबाट Firebase हुँदै आउँछन् (हेर्नुहोस् initializeData()
+// को remoteFeaturedVideos/remoteAudioPlaylist ह्यान्डलिङ, र त्यसको Apps Script
+// fallback loadFeaturedVideosViaAppsScript_/loadAudioPlaylistViaAppsScript_)।
+// पेज लोड हुनासाथ (डेटा नआउँदासम्म) दुवै खाली रहन्छन् — renderFeaturedVideos/
+// renderAudioPlaylist दुवैले खाली array लाई सुरक्षित रूपमा ह्यान्डल गर्छन्।
+let FEATURED_VIDEOS = [];
 function renderFeaturedVideos(){
   const wrap = document.getElementById("featuredVideos");
   if(!FEATURED_VIDEOS.length){ wrap.innerHTML = ""; return; }
@@ -3187,17 +3188,7 @@ function renderFeaturedVideos(){
   }).join("") + `</div>`;
 }
 
-// अडियो प्ले लिस्ट — Citizen Life Insurance को आधिकारिक जिङ्गल/अडियो (citizenlifenepal.com बाट)।
-// नयाँ ट्र्याक थप्न यो array मा तलकै ढाँचामा एउटा नयाँ object थप्नुहोस्:
-//   {title:"...", tag:"Jingle" वा "Podcast", icon:"fa-bullhorn" वा "fa-podcast", duration:"0:45", src:"https://..."}
-// src खाली राखेमा ट्र्याक "छिट्टै उपलब्ध हुनेछ" भनेर देखिन्छ, त्यसैले लिंक नभएको ट्र्याक पनि सुरक्षित रूपमा राख्न मिल्छ।
-let AUDIO_PLAYLIST = [
-  {id:"a1", title:"सिटिजन लाइफ इन्स्योरेन्समा किन बीमा गर्ने?", tag:"Jingle", icon:"fa-bullhorn", duration:"0:45", src:"https://citizenlifenepal.com/wp-content/uploads/2020/01/02_CITIZEN-LIFE-MAIN_45-Sec.mp3"},
-  {id:"a2", title:"बाल भविष्य जीवन बीमा किन गर्ने?", tag:"Jingle", icon:"fa-bullhorn", duration:"0:45", src:"https://citizenlifenepal.com/wp-content/uploads/2020/01/01_CHILD_FUTURE_45-sec.mp3"},
-  {id:"a3", title:"सिटिजन घातक रोग (Critical Care) उपचार सुविधाको लागि सिटिजन लाइफ इन्स्योरेन्स गरौं", tag:"Jingle", icon:"fa-bullhorn", duration:"0:42", src:"https://citizenlifenepal.com/wp-content/uploads/2020/01/CITIZEN-LIFE-CRITICAL-ILLNESS_42-Sec.mp3"},
-  {id:"a4", title:"मह जोडी भन्नुहुन्छ हामीले सिटिजन लाइफमा बीमा गर्यौं, तपाईंले गर्नुभयो?", tag:"Jingle", icon:"fa-bullhorn", duration:"0:30", src:"https://citizenlifenepal.com/wp-content/uploads/2020/01/04_CITIZEN-LIFE-ATMAKATHA_30-Sec.mp3"},
-  {id:"a5", title:"सुखी र समृद्ध जीवनको लागि सिटिजन लाइफ इन्स्योरेन्स गरौं", tag:"Jingle", icon:"fa-bullhorn", duration:"0:30", src:"https://citizenlifenepal.com/wp-content/uploads/2020/01/05_MONOLOGUE_30-Sec.mp3"},
-];
+let AUDIO_PLAYLIST = [];
 let audioCurrentIndex = -1;
 function renderAudioPlaylist(){
   document.getElementById("audioPlaylist").innerHTML = AUDIO_PLAYLIST.map((t,i)=>`
@@ -3815,6 +3806,32 @@ async function loadBonusRatesViaAppsScript_(){
   }
 }
 
+async function loadFeaturedVideosViaAppsScript_(){
+  if(!CONFIG.APPS_SCRIPT_URL) return;
+  try{
+    const res = await apiCall("getFeaturedVideos", {});
+    if(res && res.ok && Array.isArray(res.videos) && res.videos.length){
+      FEATURED_VIDEOS = res.videos;
+      renderFeaturedVideos();
+    }
+  } catch(err){
+    console.warn("[apiCall] getFeaturedVideos fallback failed:", err);
+  }
+}
+
+async function loadAudioPlaylistViaAppsScript_(){
+  if(!CONFIG.APPS_SCRIPT_URL) return;
+  try{
+    const res = await apiCall("getAudioPlaylist", {});
+    if(res && res.ok && Array.isArray(res.tracks) && res.tracks.length){
+      AUDIO_PLAYLIST = res.tracks;
+      renderAudioPlaylist();
+    }
+  } catch(err){
+    console.warn("[apiCall] getAudioPlaylist fallback failed:", err);
+  }
+}
+
 async function initializeData(){
   // नोट (सुरक्षा): ग्राहक/प्रोस्पेक्ट/टार्गेट जस्ता संवेदनशील डेटा यहाँ (पेज लोड हुनेबित्तिकै) कहिल्यै
   // fetch गरिँदैन — ती केवल सफल Agent login पछि loadAdminData() मार्फत मात्र ल्याइन्छ।
@@ -3826,13 +3843,15 @@ async function initializeData(){
   if(!CONFIG.FIREBASE_CONFIG || !CONFIG.FIREBASE_CONFIG.databaseURL) return;
 
   try{
-    const [remotePolicyholders, remoteAgents, remoteBlogs, remotePolicyInfo, remoteStats, remoteBonusRates] = await Promise.all([
+    const [remotePolicyholders, remoteAgents, remoteBlogs, remotePolicyInfo, remoteStats, remoteBonusRates, remoteFeaturedVideos, remoteAudioPlaylist] = await Promise.all([
       fbReadOnce_("public/recentPolicyholders"),
       fbReadOnce_("downlineAgents"),
       fbReadOnce_("blogs"),
       fbReadOnce_("policyInfo"),
       fbReadOnce_("public/stats"),
       fbReadOnce_("bonusRates"),
+      fbReadOnce_("featuredVideos"),
+      fbReadOnce_("audioPlaylist"),
     ]);
 
     if(remotePolicyholders.ok && Array.isArray(remotePolicyholders.value) && remotePolicyholders.value.length){
@@ -3914,6 +3933,38 @@ async function initializeData(){
     } else {
       console.warn("[Firebase] bonusRates:", remoteBonusRates.error);
       loadBonusRatesViaAppsScript_();
+    }
+
+    // Featured Videos + Audio Playlist -- क्रमशः Sheet को "FeaturedVideos"/
+    // "AudioPlaylist" ट्याबबाट, माथिकै BonusRates जस्तै उही ३ तहको fallback
+    // (खाली सूची भए वा सिधा Firebase read नै असफल भए, Apps Script मार्फत
+    // ब्याकअप — त्यहाँ getFeaturedVideos_()/getAudioPlaylist_() ले Sheet
+    // अझै सेटअप नभए DEFAULT_FEATURED_VIDEOS_/DEFAULT_AUDIO_PLAYLIST_ नै
+    // फर्काउँछन्, त्यसैले होमपेज कहिल्यै खाली देखिँदैन)।
+    if(remoteFeaturedVideos.ok && remoteFeaturedVideos.value){
+      const list = fbObjectToArray_(remoteFeaturedVideos.value);
+      if(list.length){
+        FEATURED_VIDEOS = list;
+        renderFeaturedVideos();
+      } else {
+        loadFeaturedVideosViaAppsScript_();
+      }
+    } else {
+      console.warn("[Firebase] featuredVideos:", remoteFeaturedVideos.error);
+      loadFeaturedVideosViaAppsScript_();
+    }
+
+    if(remoteAudioPlaylist.ok && remoteAudioPlaylist.value){
+      const list = fbObjectToArray_(remoteAudioPlaylist.value);
+      if(list.length){
+        AUDIO_PLAYLIST = list;
+        renderAudioPlaylist();
+      } else {
+        loadAudioPlaylistViaAppsScript_();
+      }
+    } else {
+      console.warn("[Firebase] audioPlaylist:", remoteAudioPlaylist.error);
+      loadAudioPlaylistViaAppsScript_();
     }
 
     initPublicStats();
