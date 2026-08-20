@@ -1816,12 +1816,20 @@ function computeCommissionForYear_(c, year){
     return { matched:true, category:c.schemeCategory||"", bucketLabel:"Single Premium", year, rate:SINGLE_PREMIUM_RATE, premium, gross, tds, net };
   }
 
-  const category = c.schemeCategory || "";
+  // "बीमा योजना प्रकार" Sheet को स्वतन्त्र text cell बाट आउने भएकोले (dropdown
+  // होइन), अतिरिक्त/नपुग space वा कोष्ठक-अगाडिको spacing भिन्नता (जस्तै "म्यादी
+  // जीवन बीमा(समतल)" वा दुई ठाउँ भएको "बीमा  (समतल)") ले तल्लो exact-match/
+  // indexOf जाँच नबिग्रियोस् भनेर तुलना गर्नुअघि whitespace मात्र मिलाइन्छ
+  // (हिज्जे/शब्द बदलिँदैन — Latest_Code.gs को normalizeSchemeCategory_ सँग
+  // उस्तै तर्क, त्यहाँ Sheet सिंक हुँदा नै लागू हुन्छ; यहाँ पहिल्यै Firebase
+  // मा भइसकेको — अझै पुरानो/अनमिलाइएको — डेटाका लागि पनि लागू हुन्छ)।
+  const category = String(c.schemeCategory || "").trim().replace(/\s+/g, " ").replace(/\s*\(\s*/g, " (").replace(/\s*\)/g, ")");
   const participatingKey = c.participating === "participating" ? "p" : "np";
 
   let rateRow = null, bucketLabel = "";
   if(category === "सावधिक जीवन बीमा" || category === "आजीवन जीवन बीमा"){
-    const term = Number(c.term)||0;
+    const termMatch = String(c.term).match(/\d+(\.\d+)?/);
+    const term = termMatch ? parseFloat(termMatch[0]) : 0;
     const table = category === "सावधिक जीवन बीमा" ? SAVADHIK_RATES : AJEEVAN_RATES;
     const bucket = table.find(b => term >= b.min && term <= b.max);
     if(bucket){ rateRow = bucket; bucketLabel = bucket.label; }
@@ -3151,16 +3159,14 @@ function renderFaq(){
     </details>`).join("");
 }
 
-// भिडियो सेक्सनको माथिल्लो भागमा देखिने "Featured" भिडियोहरू — यो स्थिर (static) सूची हो,
-// database query जाँदैन। नयाँ भिडियो थप्न सिधै यहीँ array मा दुई मध्ये जुनसुकै ढाँचामा object थप्नुहोस्:
+// भिडियो सेक्सनको माथिल्लो भागमा देखिने "Featured" भिडियोहरू — Sheet को
+// "FeaturedVideos" ट्याबबाट Firebase हुँदै आउँछन् (हेर्नुहोस् initializeData()
+// को remoteFeaturedVideos ह्यान्डलिङ, र त्यसको Apps Script fallback
+// loadFeaturedVideosViaAppsScript_)। पेज लोड हुनासाथ (डेटा नआउँदासम्म) खाली
+// रहन्छ — renderFeaturedVideos ले खाली array लाई सुरक्षित रूपमा ह्यान्डल गर्छ।
+// हरेक item यी दुई मध्ये जुनसुकै ढाँचामा हुन्छ:
 //   1) YouTube/Embed लिंकबाट:  {title, caption, type:"embed", src:"https://www.youtube.com/embed/VIDEO_ID"}
 //   2) सिधै HTML5 भिडियो फाइल (.mp4 आदि) बाट: {title, caption, type:"html5", src:"https://.../video.mp4"}
-// भिडियो/अडियो डेटा अब यहाँ hardcode गरिँदैन — दुवै Sheet को "FeaturedVideos"/
-// "AudioPlaylist" ट्याबबाट Firebase हुँदै आउँछन् (हेर्नुहोस् initializeData()
-// को remoteFeaturedVideos/remoteAudioPlaylist ह्यान्डलिङ, र त्यसको Apps Script
-// fallback loadFeaturedVideosViaAppsScript_/loadAudioPlaylistViaAppsScript_)।
-// पेज लोड हुनासाथ (डेटा नआउँदासम्म) दुवै खाली रहन्छन् — renderFeaturedVideos/
-// renderAudioPlaylist दुवैले खाली array लाई सुरक्षित रूपमा ह्यान्डल गर्छन्।
 let FEATURED_VIDEOS = [];
 function renderFeaturedVideos(){
   const wrap = document.getElementById("featuredVideos");
@@ -3188,7 +3194,17 @@ function renderFeaturedVideos(){
   }).join("") + `</div>`;
 }
 
-let AUDIO_PLAYLIST = [];
+// अडियो प्ले लिस्ट — Citizen Life Insurance को आधिकारिक जिङ्गल/अडियो (citizenlifenepal.com बाट)।
+// नयाँ ट्र्याक थप्न यो array मा तलकै ढाँचामा एउटा नयाँ object थप्नुहोस्:
+//   {title:"...", tag:"Jingle" वा "Podcast", icon:"fa-bullhorn" वा "fa-podcast", duration:"0:45", src:"https://..."}
+// src खाली राखेमा ट्र्याक "छिट्टै उपलब्ध हुनेछ" भनेर देखिन्छ, त्यसैले लिंक नभएको ट्र्याक पनि सुरक्षित रूपमा राख्न मिल्छ।
+let AUDIO_PLAYLIST = [
+  {id:"a1", title:"सिटिजन लाइफ इन्स्योरेन्समा किन बीमा गर्ने?", tag:"Jingle", icon:"fa-bullhorn", duration:"0:45", src:"https://citizenlifenepal.com/wp-content/uploads/2020/01/02_CITIZEN-LIFE-MAIN_45-Sec.mp3"},
+  {id:"a2", title:"बाल भविष्य जीवन बीमा किन गर्ने?", tag:"Jingle", icon:"fa-bullhorn", duration:"0:45", src:"https://citizenlifenepal.com/wp-content/uploads/2020/01/01_CHILD_FUTURE_45-sec.mp3"},
+  {id:"a3", title:"सिटिजन घातक रोग (Critical Care) उपचार सुविधाको लागि सिटिजन लाइफ इन्स्योरेन्स गरौं", tag:"Jingle", icon:"fa-bullhorn", duration:"0:42", src:"https://citizenlifenepal.com/wp-content/uploads/2020/01/CITIZEN-LIFE-CRITICAL-ILLNESS_42-Sec.mp3"},
+  {id:"a4", title:"मह जोडी भन्नुहुन्छ हामीले सिटिजन लाइफमा बीमा गर्यौं, तपाईंले गर्नुभयो?", tag:"Jingle", icon:"fa-bullhorn", duration:"0:30", src:"https://citizenlifenepal.com/wp-content/uploads/2020/01/04_CITIZEN-LIFE-ATMAKATHA_30-Sec.mp3"},
+  {id:"a5", title:"सुखी र समृद्ध जीवनको लागि सिटिजन लाइफ इन्स्योरेन्स गरौं", tag:"Jingle", icon:"fa-bullhorn", duration:"0:30", src:"https://citizenlifenepal.com/wp-content/uploads/2020/01/05_MONOLOGUE_30-Sec.mp3"},
+];
 let audioCurrentIndex = -1;
 function renderAudioPlaylist(){
   document.getElementById("audioPlaylist").innerHTML = AUDIO_PLAYLIST.map((t,i)=>`
@@ -3819,19 +3835,6 @@ async function loadFeaturedVideosViaAppsScript_(){
   }
 }
 
-async function loadAudioPlaylistViaAppsScript_(){
-  if(!CONFIG.APPS_SCRIPT_URL) return;
-  try{
-    const res = await apiCall("getAudioPlaylist", {});
-    if(res && res.ok && Array.isArray(res.tracks) && res.tracks.length){
-      AUDIO_PLAYLIST = res.tracks;
-      renderAudioPlaylist();
-    }
-  } catch(err){
-    console.warn("[apiCall] getAudioPlaylist fallback failed:", err);
-  }
-}
-
 async function initializeData(){
   // नोट (सुरक्षा): ग्राहक/प्रोस्पेक्ट/टार्गेट जस्ता संवेदनशील डेटा यहाँ (पेज लोड हुनेबित्तिकै) कहिल्यै
   // fetch गरिँदैन — ती केवल सफल Agent login पछि loadAdminData() मार्फत मात्र ल्याइन्छ।
@@ -3843,7 +3846,7 @@ async function initializeData(){
   if(!CONFIG.FIREBASE_CONFIG || !CONFIG.FIREBASE_CONFIG.databaseURL) return;
 
   try{
-    const [remotePolicyholders, remoteAgents, remoteBlogs, remotePolicyInfo, remoteStats, remoteBonusRates, remoteFeaturedVideos, remoteAudioPlaylist] = await Promise.all([
+    const [remotePolicyholders, remoteAgents, remoteBlogs, remotePolicyInfo, remoteStats, remoteBonusRates, remoteFeaturedVideos] = await Promise.all([
       fbReadOnce_("public/recentPolicyholders"),
       fbReadOnce_("downlineAgents"),
       fbReadOnce_("blogs"),
@@ -3851,7 +3854,6 @@ async function initializeData(){
       fbReadOnce_("public/stats"),
       fbReadOnce_("bonusRates"),
       fbReadOnce_("featuredVideos"),
-      fbReadOnce_("audioPlaylist"),
     ]);
 
     if(remotePolicyholders.ok && Array.isArray(remotePolicyholders.value) && remotePolicyholders.value.length){
@@ -3935,12 +3937,14 @@ async function initializeData(){
       loadBonusRatesViaAppsScript_();
     }
 
-    // Featured Videos + Audio Playlist -- क्रमशः Sheet को "FeaturedVideos"/
-    // "AudioPlaylist" ट्याबबाट, माथिकै BonusRates जस्तै उही ३ तहको fallback
-    // (खाली सूची भए वा सिधा Firebase read नै असफल भए, Apps Script मार्फत
-    // ब्याकअप — त्यहाँ getFeaturedVideos_()/getAudioPlaylist_() ले Sheet
-    // अझै सेटअप नभए DEFAULT_FEATURED_VIDEOS_/DEFAULT_AUDIO_PLAYLIST_ नै
-    // फर्काउँछन्, त्यसैले होमपेज कहिल्यै खाली देखिँदैन)।
+    // Featured Videos -- Sheet को "FeaturedVideos" ट्याबबाट, माथिकै BonusRates
+    // जस्तै उही ३ तहको fallback (खाली सूची भए वा सिधा Firebase read नै असफल
+    // भए, Apps Script मार्फत ब्याकअप — त्यहाँ getFeaturedVideos_() ले Sheet
+    // अझै सेटअप नभए DEFAULT_FEATURED_VIDEOS_ नै फर्काउँछ, त्यसैले होमपेज
+    // कहिल्यै खाली देखिँदैन)। Audio Playlist भने फेरि पहिलेकै जस्तै सिधै
+    // यहीं hardcode गरिएको छ (माथि हेर्नुहोस्, AUDIO_PLAYLIST array) — Firebase
+    // हुँदै लोड गर्दा डिजाइन र प्ले हुने व्यवहार दुवैमा फरक देखिएकोले फिर्ता
+    // ल्याइयो।
     if(remoteFeaturedVideos.ok && remoteFeaturedVideos.value){
       const list = fbObjectToArray_(remoteFeaturedVideos.value);
       if(list.length){
@@ -3952,19 +3956,6 @@ async function initializeData(){
     } else {
       console.warn("[Firebase] featuredVideos:", remoteFeaturedVideos.error);
       loadFeaturedVideosViaAppsScript_();
-    }
-
-    if(remoteAudioPlaylist.ok && remoteAudioPlaylist.value){
-      const list = fbObjectToArray_(remoteAudioPlaylist.value);
-      if(list.length){
-        AUDIO_PLAYLIST = list;
-        renderAudioPlaylist();
-      } else {
-        loadAudioPlaylistViaAppsScript_();
-      }
-    } else {
-      console.warn("[Firebase] audioPlaylist:", remoteAudioPlaylist.error);
-      loadAudioPlaylistViaAppsScript_();
     }
 
     initPublicStats();
